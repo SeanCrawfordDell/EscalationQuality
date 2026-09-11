@@ -45,6 +45,8 @@ input:focus,textarea:focus,select:focus { border-color:#4a8ff0; box-shadow:0 0 0
 .form-actions { justify-content:flex-end; padding:3px 0; }
 .copy-section { margin-bottom:18px; }
 .copy-section button { width:100%; }
+.copy-section { margin-bottom:18px; }
+.copy-section button { width:100%; }
 .results { min-height:430px; }
 .results.empty { display:grid; place-items:center; }
 #emptyState { text-align:center; max-width:350px; color:var(--muted); }

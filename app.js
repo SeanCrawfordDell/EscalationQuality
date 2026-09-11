@@ -192,3 +192,28 @@ function copyEscalationData() {
 }
 
 document.getElementById("copyButton").addEventListener("click", copyEscalationData);
+
+function copyEscalationData() {
+  const form = data();
+  const copyText = Object.entries(form).map(([id, value]) => {
+    if (!value) return "";
+    const label = (labels[id] || id).toUpperCase();
+    return `${label}:\n${value}`;
+  }).filter(Boolean).join("\n\n");
+  
+  navigator.clipboard.writeText(copyText).then(() => {
+    const button = document.getElementById("copyButton");
+    const originalText = button.textContent;
+    button.textContent = "Copied!";
+    button.style.background = "#12b76a";
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.background = "";
+    }, 2000);
+  }).catch(err => {
+    console.error("Failed to copy:", err);
+    alert("Failed to copy to clipboard. Please select and copy the text manually.");
+  });
+}
+
+document.getElementById("copyButton").addEventListener("click", copyEscalationData);
