@@ -31,6 +31,7 @@ h2,h3,p { margin-top:0; }
 .field b { justify-self:start; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#415875; background:#edf2f8; padding:3px 6px; border-radius:4px; }
 .field small { color:#78869a; font-weight:400; }
 input,textarea,select { width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:11px 12px; color:#17253c; background:#fff; outline:none; transition:border-color .15s,box-shadow .15s; font-weight:400; }
+select { cursor:pointer; }
 textarea { min-height:88px; resize:vertical; line-height:1.45; }
 input:focus,textarea:focus,select:focus { border-color:#4a8ff0; box-shadow:0 0 0 3px rgba(23,105,224,.12); }
 .invalid { border-color:#d92d20; box-shadow:0 0 0 3px rgba(217,45,32,.08); }
