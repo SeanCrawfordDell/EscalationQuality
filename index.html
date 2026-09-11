@@ -50,6 +50,8 @@ input:focus,textarea:focus { border-color:#4a8ff0; box-shadow:0 0 0 3px rgba(23,
 .secondary:hover,.ghost:hover { background:#e9eff7; }
 .ghost { background:transparent; color:#5a6a80; }
 .form-actions { justify-content:flex-end; padding:3px 0; }
+.copy-section { margin-bottom:18px; }
+.copy-section button { width:100%; }
 .results { min-height:430px; }
 .results.empty { display:grid; place-items:center; }
 #emptyState { text-align:center; max-width:350px; color:var(--muted); }
@@ -159,6 +161,7 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#111c2f; color:#d
           <div id="emptyState"><div class="empty-icon">✓</div><h2>Ready when you are</h2><p>Complete the form and run the review. You'll receive a transparent score and field-level feedback.</p></div>
           <div id="reviewState" hidden>
             <div class="score-header"><div><p class="eyebrow">READINESS RESULT</p><span class="status-pill" id="statusPill"></span><h2 id="resultTitle"></h2><p id="resultSummary"></p></div><div class="score-ring" id="scoreRing"><strong id="scoreValue">0</strong><small>/ 100</small></div></div>
+            <div class="copy-section" id="copySection" hidden><button class="button primary" id="copyButton" type="button">Copy escalation data</button></div>
             <div class="meter"><span id="scoreBar"></span></div>
             <div class="category-grid" id="categoryGrid"></div>
             <div class="feedback-section" id="blockersSection"><h3>Blocking issues <span id="blockerCount"></span></h3><div id="blockers"></div></div>
@@ -286,6 +289,7 @@ function render(result) {
   renderList("warnings", "warningsSection", "warningCount", result.warnings);
   renderList("strengths", "strengthsSection", null, result.strengths);
   document.getElementById("jsonOutput").textContent = JSON.stringify(result, null, 2);
+  document.getElementById("copySection").hidden = !result.ready_to_escalate;
 }
 
 function loadSample(kind) {
@@ -311,6 +315,31 @@ document.getElementById("clearForm").addEventListener("click", () => {
   document.getElementById("reviewState").hidden = true;
   document.getElementById("resultsPanel").classList.add("empty");
 });
+
+function copyEscalationData() {
+  const form = data();
+  const copyText = Object.entries(form).map(([id, value]) => {
+    if (!value) return "";
+    const label = labels[id] || id;
+    return `${label}:\n${value}`;
+  }).filter(Boolean).join("\n\n");
+  
+  navigator.clipboard.writeText(copyText).then(() => {
+    const button = document.getElementById("copyButton");
+    const originalText = button.textContent;
+    button.textContent = "Copied!";
+    button.style.background = "#12b76a";
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.background = "";
+    }, 2000);
+  }).catch(err => {
+    console.error("Failed to copy:", err);
+    alert("Failed to copy to clipboard. Please select and copy the text manually.");
+  });
+}
+
+document.getElementById("copyButton").addEventListener("click", copyEscalationData);
   </script>
 </body>
 </html>
