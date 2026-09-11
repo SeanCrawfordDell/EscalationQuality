@@ -320,7 +320,7 @@ function copyEscalationData() {
   const form = data();
   const copyText = Object.entries(form).map(([id, value]) => {
     if (!value) return "";
-    const label = labels[id] || id;
+    const label = (labels[id] || id).toUpperCase();
     return `${label}:\n${value}`;
   }).filter(Boolean).join("\n\n");
   
