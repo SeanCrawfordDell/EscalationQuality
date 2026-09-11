@@ -4,6 +4,23 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 */
 "use strict";
 
+(function initTheme() {
+  const savedTheme = localStorage.getItem("theme");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const theme = savedTheme || (prefersDark ? "dark" : "light");
+  document.documentElement.setAttribute("data-theme", theme);
+  
+  const themeToggle = document.getElementById("themeToggle");
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("theme", next);
+    });
+  }
+})();
+
 const fieldIds = ["problem", "impact", "timeline", "expected", "country", "tag", "os", "errors", "reproduction", "troubleshooting", "results", "evidence", "changes", "workaround", "request"];
 const required = ["problem", "impact", "timeline", "expected", "country", "tag", "os", "reproduction", "troubleshooting", "results", "evidence", "request"];
 const labels = {
@@ -142,56 +159,6 @@ document.getElementById("clearForm").addEventListener("click", () => {
   document.getElementById("reviewState").hidden = true;
   document.getElementById("resultsPanel").classList.add("empty");
 });
-
-function copyEscalationData() {
-  const form = data();
-  const copyText = Object.entries(form).map(([id, value]) => {
-    if (!value) return "";
-    const label = (labels[id] || id).toUpperCase();
-    return `${label}:\n${value}`;
-  }).filter(Boolean).join("\n\n");
-  
-  navigator.clipboard.writeText(copyText).then(() => {
-    const button = document.getElementById("copyButton");
-    const originalText = button.textContent;
-    button.textContent = "Copied!";
-    button.style.background = "#12b76a";
-    setTimeout(() => {
-      button.textContent = originalText;
-      button.style.background = "";
-    }, 2000);
-  }).catch(err => {
-    console.error("Failed to copy:", err);
-    alert("Failed to copy to clipboard. Please select and copy the text manually.");
-  });
-}
-
-document.getElementById("copyButton").addEventListener("click", copyEscalationData);
-
-function copyEscalationData() {
-  const form = data();
-  const copyText = Object.entries(form).map(([id, value]) => {
-    if (!value) return "";
-    const label = (labels[id] || id).toUpperCase();
-    return `${label}:\n${value}`;
-  }).filter(Boolean).join("\n\n");
-  
-  navigator.clipboard.writeText(copyText).then(() => {
-    const button = document.getElementById("copyButton");
-    const originalText = button.textContent;
-    button.textContent = "Copied!";
-    button.style.background = "#12b76a";
-    setTimeout(() => {
-      button.textContent = originalText;
-      button.style.background = "";
-    }, 2000);
-  }).catch(err => {
-    console.error("Failed to copy:", err);
-    alert("Failed to copy to clipboard. Please select and copy the text manually.");
-  });
-}
-
-document.getElementById("copyButton").addEventListener("click", copyEscalationData);
 
 function copyEscalationData() {
   const form = data();
