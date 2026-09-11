@@ -1,0 +1,316 @@
+<!--
+Secure code generated utilizing Code Guardian.
+Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-001.4, CG-INPUT-001.5, CG-INPUT-001.6, CG-INPUT-001.7, CG-INPUT-001.8
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Escalation Readiness Review</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
+  <style>
+:root { color-scheme:light; --ink:#14213d; --muted:#61708a; --line:#dce3ed; --blue:#1769e0; --blue-dark:#0e4fae; --red:#b42318; --red-soft:#fff1f0; --amber:#9a6700; --amber-soft:#fff8e6; --green:#067647; --green-soft:#ecfdf3; --white:#fff; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+* { box-sizing:border-box; }
+body { margin:0; background:#eef3f9; color:var(--ink); }
+button,input,textarea { font:inherit; }
+.topbar { height:64px; padding:0 max(24px,calc((100vw - 1440px)/2)); display:flex; align-items:center; justify-content:space-between; background:#0f1f38; color:#fff; }
+.brand { display:flex; align-items:center; gap:11px; font-weight:750; }
+.brand-mark { display:grid; place-items:center; width:34px; height:34px; border-radius:9px; background:#2d7ff0; font-size:13px; }
+.privacy { color:#bdc9dc; font-size:13px; }
+main { max-width:1440px; margin:auto; padding:36px 24px 64px; }
+.hero { display:flex; justify-content:space-between; gap:24px; align-items:end; margin-bottom:25px; }
+.hero h1 { margin:2px 0 7px; font-size:36px; letter-spacing:-.04em; line-height:1.1; }
+.hero p { margin:0; color:var(--muted); }
+.eyebrow { color:var(--blue)!important; font-size:11px!important; font-weight:800; letter-spacing:.13em; margin:0 0 7px!important; }
+.hero-actions,.form-actions { display:flex; gap:10px; }
+.workspace { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); gap:22px; align-items:start; }
+form,.results-shell { display:grid; gap:18px; }
+.results-shell { position:sticky; top:18px; }
+.panel { background:var(--white); border:1px solid var(--line); border-radius:14px; padding:24px; box-shadow:0 5px 18px rgba(22,43,77,.045); }
+.section-heading { display:flex; gap:13px; align-items:flex-start; border-bottom:1px solid #e8edf4; padding-bottom:17px; margin-bottom:20px; }
+.section-heading>span { flex:none; display:grid; place-items:center; width:29px; height:29px; border-radius:50%; background:#e8f1ff; color:var(--blue); font-weight:800; font-size:13px; }
+h2,h3,p { margin-top:0; }
+.section-heading h2 { margin:1px 0 3px; font-size:18px; }
+.section-heading p { margin:0; color:var(--muted); font-size:13px; }
+.field-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.field { display:grid; gap:7px; color:#273852; font-size:13px; font-weight:700; }
+.field.wide { grid-column:1/-1; }
+.field b { justify-self:start; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#415875; background:#edf2f8; padding:3px 6px; border-radius:4px; }
+.field small { color:#78869a; font-weight:400; }
+input,textarea { width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:11px 12px; color:#17253c; background:#fff; outline:none; transition:border-color .15s,box-shadow .15s; font-weight:400; }
+textarea { min-height:88px; resize:vertical; line-height:1.45; }
+input:focus,textarea:focus { border-color:#4a8ff0; box-shadow:0 0 0 3px rgba(23,105,224,.12); }
+.invalid { border-color:#d92d20; box-shadow:0 0 0 3px rgba(217,45,32,.08); }
+.button { border:0; border-radius:8px; padding:10px 15px; cursor:pointer; font-weight:750; transition:background .15s,transform .1s; }
+.button:active { transform:translateY(1px); }
+.primary { background:var(--blue); color:#fff; padding-inline:22px; }
+.primary:hover { background:var(--blue-dark); }
+.secondary { background:#fff; color:#28405f; border:1px solid #cbd5e1; }
+.secondary:hover,.ghost:hover { background:#e9eff7; }
+.ghost { background:transparent; color:#5a6a80; }
+.form-actions { justify-content:flex-end; padding:3px 0; }
+.results { min-height:430px; }
+.results.empty { display:grid; place-items:center; }
+#emptyState { text-align:center; max-width:350px; color:var(--muted); }
+#emptyState h2 { color:var(--ink); margin:15px 0 7px; }
+.empty-icon { margin:auto; width:56px; height:56px; display:grid; place-items:center; border-radius:50%; background:#e8f1ff; color:var(--blue); font-size:26px; font-weight:800; }
+.score-header { display:flex; justify-content:space-between; gap:16px; align-items:start; }
+.score-header h2 { font-size:25px; letter-spacing:-.025em; margin:8px 0 5px; }
+.score-header p { color:var(--muted); font-size:14px; line-height:1.45; }
+.status-pill { display:inline-block; border-radius:99px; padding:5px 9px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
+.status-pill.ready { color:var(--green); background:var(--green-soft); }
+.status-pill.review { color:var(--amber); background:var(--amber-soft); }
+.status-pill.blocked { color:var(--red); background:var(--red-soft); }
+.score-ring { flex:none; width:92px; height:92px; border-radius:50%; display:grid; place-content:center; text-align:center; background:#edf2f7; border:8px solid var(--blue); }
+.score-ring strong { font-size:25px; line-height:1; }
+.score-ring small { color:var(--muted); font-size:10px; margin-top:3px; }
+.meter { height:7px; border-radius:9px; overflow:hidden; background:#e8edf3; margin:18px 0; }
+.meter span { display:block; height:100%; width:0; background:var(--blue); transition:width .4s; }
+.category-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:21px; }
+.category { border:1px solid #e0e6ee; border-radius:8px; padding:10px; }
+.category span { display:block; color:var(--muted); font-size:11px; margin-bottom:3px; }
+.category strong { font-size:14px; }
+.feedback-section { border-top:1px solid #e4e9f0; padding-top:18px; margin-top:18px; }
+.feedback-section h3 { display:flex; align-items:center; gap:7px; font-size:14px; margin-bottom:10px; }
+.feedback-section h3 span { display:inline-grid; place-items:center; min-width:20px; height:20px; padding:0 5px; border-radius:99px; background:#edf1f6; color:#52637a; font-size:10px; }
+.feedback-card { border-left:3px solid #9aa8ba; padding:9px 11px; background:#f7f9fc; border-radius:0 7px 7px 0; margin:8px 0; }
+.feedback-card.blocker { border-color:#d92d20; background:#fff6f5; }
+.feedback-card.warning { border-color:#eaaa08; background:#fffaf0; }
+.feedback-card.strength { border-color:#12b76a; background:#f3fff8; }
+.feedback-card strong { display:block; font-size:12px; margin-bottom:3px; text-transform:capitalize; }
+.feedback-card p { margin:0; color:#55657a; font-size:12px; line-height:1.45; }
+details { border-top:1px solid #e4e9f0; margin-top:20px; padding-top:16px; }
+summary { cursor:pointer; color:#415875; font-size:12px; font-weight:750; }
+pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#111c2f; color:#d9e4f5; padding:13px; border-radius:8px; font-size:11px; line-height:1.5; max-height:320px; overflow:auto; }
+.rubric h3 { font-size:15px; margin-bottom:13px; }
+.rubric dl { margin:0; display:grid; gap:7px; }
+.rubric dl div { display:flex; justify-content:space-between; border-bottom:1px solid #e7ebf1; padding-bottom:6px; }
+.rubric dt,.rubric dd { margin:0; font-size:12px; }
+.rubric dt { color:#53647b; }
+.rubric dd { font-weight:800; }
+.rubric p { color:#738196; font-size:11px; line-height:1.5; margin:14px 0 0; }
+@media (max-width:1000px) { .workspace { grid-template-columns:1fr; } .results-shell { position:static; } }
+@media (max-width:650px) { main { padding:24px 14px 45px; } .topbar { padding:0 14px; } .privacy { display:none; } .hero { display:block; } .hero-actions { margin-top:18px; flex-wrap:wrap; } .field-grid { grid-template-columns:1fr; } .field.wide { grid-column:auto; } .panel { padding:18px; } .score-ring { width:78px; height:78px; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">ER</span><span>Escalation Review</span></div>
+    <span class="privacy">Local prototype · Data stays in this browser</span>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">QUALITY GATE</p>
+        <h1>Is this escalation ready?</h1>
+        <p>Check that a senior technician has enough specific, actionable evidence to begin work.</p>
+      </div>
+      <div class="hero-actions">
+        <button class="button secondary" id="loadWeak" type="button">Load weak sample</button>
+        <button class="button secondary" id="loadStrong" type="button">Load strong sample</button>
+      </div>
+    </section>
+
+    <div class="workspace">
+      <form id="escalationForm" novalidate>
+        <section class="panel">
+          <div class="section-heading"><span>1</span><div><h2>Issue and impact</h2><p>Describe what is happening and why it matters.</p></div></div>
+          <div class="field-grid">
+            <label class="field wide">Problem statement <b>Required</b><textarea id="problem" maxlength="3000" placeholder="What is failing? Include the affected component and scope."></textarea><small>Describe the issue in concrete terms, not simply "not working."</small></label>
+            <label class="field">Business impact <b>Required</b><textarea id="impact" maxlength="2000" placeholder="Who is affected? How many? What business process is blocked?"></textarea></label>
+            <label class="field">Timeline and frequency <b>Required</b><textarea id="timeline" maxlength="1500" placeholder="When did it begin? Constant or intermittent? Last occurrence?"></textarea></label>
+            <label class="field">Expected behavior <b>Required</b><textarea id="expected" maxlength="1500" placeholder="What should happen?"></textarea></label>
+            <label class="field">Actual behavior <b>Required</b><textarea id="actual" maxlength="1500" placeholder="What happens instead?"></textarea></label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading"><span>2</span><div><h2>Technical context</h2><p>Give enough context to locate and reproduce the failure.</p></div></div>
+          <div class="field-grid">
+            <label class="field">Product / asset identifier <b>Required</b><input id="asset" maxlength="250" placeholder="Product, model, asset ID, or service tag"></label>
+            <label class="field">Environment and versions <b>Required</b><textarea id="environment" maxlength="2000" placeholder="OS, firmware, application versions, topology, relevant configuration"></textarea></label>
+            <label class="field wide">Exact errors and timestamps <textarea id="errors" maxlength="3000" placeholder="Paste exact error text, codes, and occurrence times, or state that no error is shown."></textarea></label>
+            <label class="field wide">Reproduction steps <b>Required</b><textarea id="reproduction" maxlength="3000" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea></label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading"><span>3</span><div><h2>Investigation</h2><p>Show what was tested, what happened, and what evidence is available.</p></div></div>
+          <div class="field-grid">
+            <label class="field wide">Troubleshooting performed <b>Required</b><textarea id="troubleshooting" maxlength="4000" placeholder="List each action taken and why."></textarea></label>
+            <label class="field wide">Results and observations <b>Required</b><textarea id="results" maxlength="4000" placeholder="Document the result of each action, including what changed or did not change."></textarea></label>
+            <label class="field">Logs and evidence <textarea id="evidence" maxlength="2000" placeholder="Log names, timestamps, screenshots, diagnostics, case links, or state why unavailable."></textarea></label>
+            <label class="field">Recent changes <textarea id="changes" maxlength="1500" placeholder="Updates, configuration changes, deployments, or "no known changes."></textarea></label>
+            <label class="field">Current workaround <textarea id="workaround" maxlength="1500" placeholder="Workaround and limitations, or "none available."></textarea></label>
+            <label class="field">Requested senior assistance <b>Required</b><textarea id="request" maxlength="2000" placeholder="What specifically should the senior technician investigate or decide?"></textarea></label>
+          </div>
+        </section>
+
+        <div class="form-actions">
+          <button class="button ghost" id="clearForm" type="button">Clear</button>
+          <button class="button primary" type="submit">Review escalation</button>
+        </div>
+      </form>
+
+      <aside class="results-shell" aria-live="polite">
+        <section class="panel results empty" id="resultsPanel">
+          <div id="emptyState"><div class="empty-icon">✓</div><h2>Ready when you are</h2><p>Complete the form and run the review. You'll receive a transparent score and field-level feedback.</p></div>
+          <div id="reviewState" hidden>
+            <div class="score-header"><div><p class="eyebrow">READINESS RESULT</p><span class="status-pill" id="statusPill"></span><h2 id="resultTitle"></h2><p id="resultSummary"></p></div><div class="score-ring" id="scoreRing"><strong id="scoreValue">0</strong><small>/ 100</small></div></div>
+            <div class="meter"><span id="scoreBar"></span></div>
+            <div class="category-grid" id="categoryGrid"></div>
+            <div class="feedback-section" id="blockersSection"><h3>Blocking issues <span id="blockerCount"></span></h3><div id="blockers"></div></div>
+            <div class="feedback-section" id="warningsSection"><h3>Recommendations <span id="warningCount"></span></h3><div id="warnings"></div></div>
+            <div class="feedback-section" id="strengthsSection"><h3>What's working</h3><div id="strengths"></div></div>
+            <details><summary>Review JSON</summary><pre id="jsonOutput"></pre></details>
+          </div>
+        </section>
+        <section class="panel rubric"><h3>How this prototype scores</h3><dl><div><dt>Completeness</dt><dd>30</dd></div><div><dt>Specificity</dt><dd>20</dd></div><div><dt>Reproducibility</dt><dd>15</dd></div><div><dt>Evidence</dt><dd>15</dd></div><div><dt>Troubleshooting</dt><dd>15</dd></div><div><dt>Clear request</dt><dd>5</dd></div></dl><p>Ready requires 75+ points and no blocking issues. This local rule-based evaluator is designed to validate the workflow before connecting an enterprise LLM.</p></section>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+"use strict";
+
+const fieldIds = ["problem", "impact", "timeline", "expected", "actual", "asset", "environment", "errors", "reproduction", "troubleshooting", "results", "evidence", "changes", "workaround", "request"];
+const required = ["problem", "impact", "timeline", "expected", "actual", "asset", "environment", "reproduction", "troubleshooting", "results", "request"];
+const labels = {
+  problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", actual: "actual behavior", asset: "product / asset identifier", environment: "environment and versions", errors: "exact errors and timestamps", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "logs and evidence", changes: "recent changes", workaround: "current workaround", request: "requested senior assistance"
+};
+const weakPhrases = /^(n\/a|na|none|unknown|not working|broken|issue|problem|see above|same)$/i;
+const specificityTerms = /\b(error|code|version|build|firmware|user|device|host|server|client|minute|hour|percent|failed|timeout|intermittent|always|every|since|affected|blocked)\b/i;
+const evidenceTerms = /\b(log|trace|screenshot|diagnostic|timestamp|event|dump|bundle|capture|report|case|attachment|error code)\b/i;
+const resultTerms = /\b(result|observed|confirmed|remained|changed|passed|failed|resolved|returned|showed|revealed|reproduced|did not|no change)\b/i;
+
+const samples = {
+  weak: { problem:"System not working", impact:"Users affected", timeline:"Started recently", expected:"It should work", actual:"It fails", asset:"Server", environment:"Production", errors:"Unknown", reproduction:"Try to use it", troubleshooting:"Restarted and checked things", results:"No change", evidence:"None", changes:"Unknown", workaround:"None", request:"Please help" },
+  strong: { problem:"PowerEdge R750 iDRAC web interface returns HTTP 503 after login while Redfish API remains available. The issue affects only the management UI on one host.", impact:"The infrastructure team cannot use the UI to complete a scheduled firmware compliance review for host DC2-HV-047. One of 24 hosts is affected; production workloads continue running, but the maintenance window closes at 22:00 UTC.", timeline:"First observed 2026-09-10 at 14:18 UTC after the monthly credential rotation. Reproduces on every login attempt. Last confirmed at 16:42 UTC.", expected:"After authentication, the iDRAC dashboard should load and display system health and firmware inventory.", actual:"Authentication succeeds, then the dashboard request waits approximately 30 seconds and returns HTTP 503. Redfish requests to /redfish/v1/Systems return HTTP 200.", asset:"PowerEdge R750, service tag ABC1234, asset DC2-HV-047", environment:"iDRAC9 7.10.30.00; BIOS 1.19.2; Chrome 140 and Edge 140 tested from Windows 11 24H2. Host is in DC2 management VLAN 120 behind the standard corporate proxy.", errors:"Browser network trace: GET /restgui/start.html returned 503 at 2026-09-10 16:42:11 UTC. Lifecycle log event: RAC0182 at 16:41:58 UTC. No TLS or DNS errors observed.", reproduction:"1. Browse to the management address from VLAN 120.\n2. Authenticate with an authorized local test account.\n3. Wait for the dashboard to load.\n4. Observe HTTP 503 after approximately 30 seconds.\n5. Call /redfish/v1/Systems with the same account and observe HTTP 200.", troubleshooting:"1. Tested Chrome and Edge to exclude browser cache.\n2. Tested from a second workstation on VLAN 120.\n3. Restarted only the iDRAC management controller.\n4. Exported the Lifecycle Controller log and browser network trace.\n5. Compared settings with healthy host DC2-HV-046.", results:"1. Both browsers returned the same 503.\n2. The second workstation reproduced the failure.\n3. Controller restart restored the UI for 12 minutes, then the 503 returned.\n4. RAC0182 appears immediately before each failure.\n5. Proxy and session-timeout settings match the healthy host; firmware differs (7.10.30.00 versus 7.10.20.00).", evidence:"Attached: DC2-HV-047_LC-log_20260910.zip and browser-trace-1642.har. Relevant timestamps are 16:41–16:43 UTC. Internal incident INC-10482.", changes:"iDRAC firmware updated from 7.10.20.00 to 7.10.30.00 on 2026-09-09 at 23:20 UTC. Credentials rotated at 13:50 UTC today. No network configuration changes are known.", workaround:"Redfish API remains available for inventory. There is no workaround for UI-only tasks; maintenance can be deferred for 24 hours.", request:"Please determine whether RAC0182 and the recurring UI service failure are a known issue in iDRAC9 7.10.30.00 and advise whether rollback to 7.10.20.00 is supported before the maintenance window closes." }
+};
+
+function value(id) { return document.getElementById(id).value.trim(); }
+function addFinding(target, field, reason, kind) { target.push({ field, reason, kind }); }
+function hasDetail(text, minimum) { return text.length >= minimum && !weakPhrases.test(text); }
+function numberedSteps(text) { return (text.match(/(?:^|\n)\s*(?:\d+[.)]|[-•])/g) || []).length; }
+function data() { return Object.fromEntries(fieldIds.map(id => [id, value(id)])); }
+
+function evaluate(form) {
+  const blockers = [], warnings = [], strengths = [];
+  required.forEach(id => {
+    if (!form[id]) addFinding(blockers, id, "Required information is missing.", "blocker");
+    else if (weakPhrases.test(form[id])) addFinding(blockers, id, "The response is too vague to support an escalation.", "blocker");
+  });
+
+  if (form.problem && !hasDetail(form.problem, 45)) addFinding(warnings, "problem", "Name the affected component, failure, and scope in concrete terms.", "warning");
+  if (form.impact && (!hasDetail(form.impact, 45) || !/\b(\d+|one|two|three|all|single|multiple|production|customer|user|team|blocked|degraded)\b/i.test(form.impact))) addFinding(warnings, "impact", "Quantify who or what is affected and explain the operational consequence.", "warning");
+  if (form.timeline && !/\b(\d{1,2}[:/]\d{1,2}|\d{4}-\d{2}-\d{2}|utc|am|pm|daily|hourly|every|constant|intermittent|first|last|since)\b/i.test(form.timeline)) addFinding(warnings, "timeline", "Add when the issue began, its frequency, and the latest occurrence.", "warning");
+  if (form.environment && (!hasDetail(form.environment, 35) || !/\d/.test(form.environment))) addFinding(warnings, "environment", "Include relevant product, OS, firmware, or application version numbers.", "warning");
+  if (form.reproduction && numberedSteps(form.reproduction) < 2) addFinding(warnings, "reproduction", "Use at least two ordered steps so another technician can reproduce the issue.", "warning");
+  if (form.troubleshooting && numberedSteps(form.troubleshooting) < 2) addFinding(warnings, "troubleshooting", "Separate the troubleshooting actions into distinct steps.", "warning");
+  if (form.results && (!hasDetail(form.results, 55) || !resultTerms.test(form.results))) addFinding(warnings, "results", "Record the observed outcome of each troubleshooting action.", "warning");
+  if (!form.errors) addFinding(warnings, "errors", "Provide exact errors and timestamps, or explicitly state that no error is displayed.", "warning");
+  if (!form.evidence || weakPhrases.test(form.evidence)) addFinding(warnings, "evidence", "Reference relevant logs, screenshots, diagnostics, or explain why evidence is unavailable.", "warning");
+  if (!form.changes) addFinding(warnings, "changes", "Document recent changes or explicitly state that none are known.", "warning");
+  if (!form.workaround) addFinding(warnings, "workaround", "Describe the current workaround and limitations, or state that none exists.", "warning");
+  if (form.request && (!hasDetail(form.request, 35) || /^(help|please help|investigate|advise)$/i.test(form.request))) addFinding(warnings, "request", "State the specific decision, diagnosis, or action needed from the senior technician.", "warning");
+
+  const completedRequired = required.filter(id => hasDetail(form[id], id === "asset" ? 5 : 15)).length;
+  const completeness = Math.round(30 * completedRequired / required.length);
+  const coreText = [form.problem, form.impact, form.timeline, form.environment, form.actual].join(" ");
+  const specificity = Math.min(20, Math.round((Math.min(coreText.length, 500) / 500 * 12) + (specificityTerms.test(coreText) ? 4 : 0) + (/\d/.test(coreText) ? 4 : 0)));
+  const reproduction = Math.min(15, (hasDetail(form.reproduction, 60) ? 6 : form.reproduction ? 2 : 0) + Math.min(numberedSteps(form.reproduction), 5) + (form.expected && form.actual ? 4 : 0));
+  const evidenceText = [form.errors, form.evidence, form.timeline].join(" ");
+  const evidence = Math.min(15, (hasDetail(form.errors, 20) ? 5 : form.errors ? 1 : 0) + (hasDetail(form.evidence, 20) ? 5 : 0) + (evidenceTerms.test(evidenceText) ? 3 : 0) + (/\d/.test(evidenceText) ? 2 : 0));
+  const troubleshooting = Math.min(15, (hasDetail(form.troubleshooting, 60) ? 5 : form.troubleshooting ? 2 : 0) + Math.min(numberedSteps(form.troubleshooting), 4) + (hasDetail(form.results, 60) ? 4 : form.results ? 1 : 0) + (resultTerms.test(form.results) ? 2 : 0));
+  const clearRequest = !form.request ? 0 : hasDetail(form.request, 50) ? 5 : 2;
+  const categories = { completeness, specificity, reproducibility:reproduction, evidence, troubleshooting, clear_request:clearRequest };
+  const score = Object.values(categories).reduce((sum, item) => sum + item, 0);
+
+  if (score >= 80 && blockers.length === 0) strengths.push({ field:"overall", reason:"The escalation provides enough structured context for a senior technician to begin investigation.", kind:"strength" });
+  if (numberedSteps(form.reproduction) >= 3) strengths.push({ field:"reproduction", reason:"Reproduction steps are clearly separated and actionable.", kind:"strength" });
+  if (numberedSteps(form.troubleshooting) >= 3 && hasDetail(form.results, 80)) strengths.push({ field:"troubleshooting", reason:"Actions and observed results provide a useful investigation trail.", kind:"strength" });
+  if (hasDetail(form.evidence, 40) && evidenceTerms.test(form.evidence)) strengths.push({ field:"evidence", reason:"Relevant evidence is identified for the receiving technician.", kind:"strength" });
+  if (hasDetail(form.request, 55)) strengths.push({ field:"request", reason:"The requested senior-level assistance is explicit.", kind:"strength" });
+
+  const ready = score >= 75 && blockers.length === 0;
+  const status = ready ? "ready" : blockers.length ? "blocked" : "needs_improvement";
+  return { status, score, ready_to_escalate:ready, categories, blocking_issues:blockers, warnings, strengths };
+}
+
+function makeCard(item) {
+  const card = document.createElement("div");
+  card.className = `feedback-card ${item.kind}`;
+  const title = document.createElement("strong");
+  title.textContent = labels[item.field] || item.field;
+  const reason = document.createElement("p");
+  reason.textContent = item.reason;
+  card.append(title, reason);
+  return card;
+}
+
+function renderList(containerId, sectionId, countId, items) {
+  const container = document.getElementById(containerId);
+  container.replaceChildren(...items.map(makeCard));
+  document.getElementById(sectionId).hidden = items.length === 0;
+  if (countId) document.getElementById(countId).textContent = String(items.length);
+}
+
+function render(result) {
+  document.getElementById("emptyState").hidden = true;
+  document.getElementById("reviewState").hidden = false;
+  document.getElementById("resultsPanel").classList.remove("empty");
+  const state = result.status === "ready" ? { css:"ready", pill:"Ready", title:"Ready to escalate", summary:"No blocking information gaps were found." } : result.status === "blocked" ? { css:"blocked", pill:"Not ready", title:"Complete the required details", summary:"Resolve the blocking issues before escalation." } : { css:"review", pill:"Improve", title:"Nearly ready", summary:"There are no missing required fields, but the content needs more detail." };
+  const pill = document.getElementById("statusPill");
+  pill.className = `status-pill ${state.css}`;
+  pill.textContent = state.pill;
+  document.getElementById("resultTitle").textContent = state.title;
+  document.getElementById("resultSummary").textContent = state.summary;
+  document.getElementById("scoreValue").textContent = String(result.score);
+  document.getElementById("scoreBar").style.width = `${result.score}%`;
+  document.getElementById("scoreRing").style.borderColor = result.status === "ready" ? "#12b76a" : result.status === "blocked" ? "#d92d20" : "#eaaa08";
+  const maxima = { completeness:30, specificity:20, reproducibility:15, evidence:15, troubleshooting:15, clear_request:5 };
+  const categoryGrid = document.getElementById("categoryGrid");
+  categoryGrid.replaceChildren(...Object.entries(result.categories).map(([name, score]) => {
+    const item = document.createElement("div");
+    item.className = "category";
+    const label = document.createElement("span");
+    label.textContent = name.replace("_", " ");
+    const scoreText = document.createElement("strong");
+    scoreText.textContent = `${score} / ${maxima[name]}`;
+    item.append(label, scoreText);
+    return item;
+  }));
+  renderList("blockers", "blockersSection", "blockerCount", result.blocking_issues);
+  renderList("warnings", "warningsSection", "warningCount", result.warnings);
+  renderList("strengths", "strengthsSection", null, result.strengths);
+  document.getElementById("jsonOutput").textContent = JSON.stringify(result, null, 2);
+}
+
+function loadSample(kind) {
+  fieldIds.forEach(id => {
+    document.getElementById(id).value = samples[kind][id] || "";
+    document.getElementById(id).classList.remove("invalid");
+  });
+  render(evaluate(data()));
+}
+
+document.getElementById("escalationForm").addEventListener("submit", event => {
+  event.preventDefault();
+  const form = data();
+  required.forEach(id => document.getElementById(id).classList.toggle("invalid", !form[id]));
+  render(evaluate(form));
+});
+document.getElementById("loadWeak").addEventListener("click", () => loadSample("weak"));
+document.getElementById("loadStrong").addEventListener("click", () => loadSample("strong"));
+document.getElementById("clearForm").addEventListener("click", () => {
+  document.getElementById("escalationForm").reset();
+  fieldIds.forEach(id => document.getElementById(id).classList.remove("invalid"));
+  document.getElementById("emptyState").hidden = false;
+  document.getElementById("reviewState").hidden = true;
+  document.getElementById("resultsPanel").classList.add("empty");
+});
+  </script>
+</body>
+</html>
