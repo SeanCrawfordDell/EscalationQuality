@@ -4,6 +4,21 @@
   const $ = id => document.getElementById(id);
   let state = CaseNotes.empty(), dirty = false, writable = false, copying = false, release;
   let loadFailed = false;
+  const sidebarKey = "dell-support.case-history-collapsed";
+  function setHistoryCollapsed(collapsed) {
+    $("caseHistory").hidden = collapsed;
+    $("notesLayout").classList.toggle("history-collapsed", collapsed);
+    $("toggleHistory").setAttribute("aria-expanded", String(!collapsed));
+    $("toggleHistory").textContent = collapsed ? "Show Recent Cases" : "Hide Recent Cases";
+  }
+  let historyCollapsed = false;
+  try { historyCollapsed = localStorage.getItem(sidebarKey) === "true"; } catch { /* Use expanded default. */ }
+  setHistoryCollapsed(historyCollapsed);
+  $("toggleHistory").addEventListener("click", () => {
+    historyCollapsed = !historyCollapsed;
+    setHistoryCollapsed(historyCollapsed);
+    try { localStorage.setItem(sidebarKey, String(historyCollapsed)); } catch { /* Still works for this visit. */ }
+  });
   const selected = () => state.cases.find(note => note.id === state.selected);
   function status(text, error = false) {
     $("saveStatus").textContent = text;
@@ -30,7 +45,12 @@
   }
   function history() {
     const query = $("search").value.trim().toLowerCase();
-    const matches = state.cases.filter(note => [note.tag, note.request, note.issue].some(value => value.toLowerCase().includes(query)));
+    const filter = $("followupFilter").value || "all";
+    const matches = state.cases.filter(note => {
+      const status = note.toolkit?.status || "Open";
+      const overdue = !!note.toolkit?.due && status !== "Completed" && Date.parse(note.toolkit.due) < Date.now();
+      return [note.tag, note.request, note.issue].some(value => value.toLowerCase().includes(query)) && (filter === "all" || filter === "overdue" && overdue || filter === "active" && status !== "Completed" || filter === "completed" && status === "Completed");
+    });
     $("caseCount").textContent = `${state.cases.length} / 100`;
     $("historyList").replaceChildren(...matches.map(note => {
       const button = document.createElement("button"); button.className = "case-item";
@@ -40,6 +60,13 @@
       const issue = document.createElement("span"); issue.textContent = note.issue || "No issue description yet";
       const meta = document.createElement("small"); meta.textContent = `${note.request ? note.request + " · " : ""}${new Date(note.created).toLocaleString()}`;
       button.append(title, issue, meta);
+      if (note.toolkit) {
+        const badge = document.createElement("small");
+        const late = note.toolkit.due && note.toolkit.status !== "Completed" && Date.parse(note.toolkit.due) < Date.now();
+        badge.className = late ? "followup-badge overdue" : "followup-badge";
+        badge.textContent = `${late ? "Overdue · " : ""}${note.toolkit.status}${note.toolkit.owner ? " · " + note.toolkit.owner : ""}${note.toolkit.due ? " · " + new Date(note.toolkit.due).toLocaleString() : ""}`;
+        button.append(badge);
+      }
       const row = document.createElement("div"); row.className = "case-row";
       const remove = document.createElement("button");
       remove.className = "delete-case"; remove.type = "button";
@@ -82,8 +109,10 @@
     $("restoreHistory").disabled = !writable || copying;
     $("fields").disabled = !writable || copying;
     $("newNote").disabled = $("startNote").disabled = !writable || copying;
-    $("copyNote").disabled = $("escalateNote").disabled = !writable || copying;
+    $("emailNote").disabled = $("copyNote").disabled = $("escalateNote").disabled = !writable || copying;
     $("stopTimer").disabled = !writable || copying || !selected() || selected().started === null;
+    window.CaseMarkdown?.setEditable(writable && !copying);
+    window.CaseToolkit?.setEditable(writable && !copying);
   }
   function tick() {
     const note = selected(); if (!note) return;
@@ -110,6 +139,8 @@
       } else input.value = note[field];
     });
     controls(); history(); tick();
+    window.CaseMarkdown?.refresh();
+    window.CaseToolkit?.refresh();
   }
   function newNote() {
     if (!writable || copying || !save()) return;
@@ -175,6 +206,8 @@
   $("newNote").addEventListener("click", newNote);
   $("startNote").addEventListener("click", newNote);
   $("search").addEventListener("input", history);
+  $("followupFilter").addEventListener("change", history);
+  setInterval(() => { if (!$("historyList").contains(document.activeElement)) history(); }, 60000);
   $("retrySave").addEventListener("click", save);
   $("noteForm").addEventListener("submit", event => event.preventDefault());
   $("noteForm").addEventListener("input", event => {
@@ -187,6 +220,30 @@
     $("copyStatus").textContent = "Copy all fields and tracked time as plain text.";
     if (restarting) save();
     tick(); history();
+    if (event.target.id === "os") window.CaseToolkit?.refreshChecklist();
+  });
+  $("emailNote").addEventListener("click", () => {
+    const note = selected();
+    if (!note || !writable || copying) return;
+    if (!note.request.trim()) {
+      $("copyStatus").textContent = "Enter a Service Request Number before creating the email.";
+      $("request").focus();
+      return;
+    }
+    save();
+    try {
+      const now = Date.now();
+      const content = window.CaseMarkdown.emailHtml(note, now);
+      const message = CaseNotes.emailFile(note, now, content, crypto.randomUUID());
+      const url = URL.createObjectURL(new Blob([message], { type: "message/rfc822" }));
+      const link = document.createElement("a"); link.href = url;
+      link.download = "case-" + note.request.replace(/[^a-zA-Z0-9-]/g, "_").slice(0, 80) + ".eml";
+      document.body.append(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      $("copyStatus").textContent = "HTML email downloaded with inline screenshots. Open the .eml file in your email app, add the recipient, and send. Some apps open it as a message; use Forward or Edit as New if needed.";
+    } catch {
+      $("copyStatus").textContent = "Could not create the email file. Your note is unchanged. Try again, or use Copy to Lightning for a plain-text copy.";
+    }
   });
   $("escalateNote").addEventListener("click", () => {
     const note = selected();
@@ -245,5 +302,31 @@
     }
   }
   window.addEventListener("pageshow", event => { if (event.persisted) acquire(); });
+  window.CaseMarkdown?.init({
+    current: selected,
+    canEdit: () => writable && !copying,
+    update(field, value, images) {
+      const note = selected();
+      if (!note || !writable || copying) return;
+      if (images) note.images = images;
+      $(field).value = value;
+      $(field).dispatchEvent(new Event("input", { bubbles: true }));
+      if (images) save();
+    }
+  });
+  window.CaseToolkit?.init({
+    save,
+    current: selected,
+    canEdit: () => writable && !copying,
+    mutate(change, immediate = true) {
+      const note = selected(); if (!note || !writable || copying) return;
+      change(note);
+      const now = Date.now(); CaseNotes.start(state, note, now); note.updated = now;
+      dirty = true; status("Unsaved changes");
+      if (immediate) save();
+      tick(); history();
+    },
+    refreshEditors: () => { const note = selected(); if (!note) return; $("notes").value = note.notes; $("next").value = note.next; window.CaseMarkdown?.refresh(); }
+  });
   acquire();
 })();

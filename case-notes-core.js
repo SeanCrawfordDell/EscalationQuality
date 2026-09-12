@@ -1,7 +1,8 @@
 "use strict";
 // Pure case operations, shared with the Node regression tests.
 const CaseNotes = (() => {
-  const fields = { tag: "Service Tag", request: "Service Request Number", os: "OS/Solution", country: "Customer Country", supportType: "OEM or PSP", logLocation: "Log Location", issue: "Issue Description", notes: "Notes", next: "Action Plan / Next Steps" };
+  const Toolkit = typeof module !== "undefined" ? require("./case-toolkit-core.js") : CaseToolkitCore;
+  const fields = { tag: "Service Tag", platform: "System/Platform", request: "Service Request Number", os: "OS/Solution", country: "Customer Country", supportType: "OS Support", logLocation: "Log Location", issue: "Issue Description", notes: "Notes", next: "Action Plan / Next Steps" };
   const empty = () => ({ version: 1, selected: null, cases: [] });
   const elapsed = (note, now) => note.elapsed + (note.started === null ? 0 : Math.max(0, now - note.started));
   function stop(note, now) { note.elapsed = elapsed(note, now); note.started = null; }
@@ -12,7 +13,7 @@ const CaseNotes = (() => {
   }
   function create(state, id, now) {
     state.cases.forEach(item => { if (item.started !== null) stop(item, now); });
-    const note = { id, created: now, updated: now, elapsed: 0, started: now, ...Object.fromEntries(Object.keys(fields).map(key => [key, ""])) };
+    const note = { toolkit: Toolkit.defaults(), id, created: now, updated: now, elapsed: 0, started: now, ...Object.fromEntries(Object.keys(fields).map(key => [key, ""])) };
     state.cases.unshift(note); state.cases = state.cases.slice(0, 100); state.selected = id;
     return note;
   }
@@ -20,8 +21,51 @@ const CaseNotes = (() => {
     const seconds = Math.floor(ms / 1000);
     return [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60].map(n => String(n).padStart(2, "0")).join(":");
   }
+  function plainImages(text) {
+    let plain = text.replace(/!\[([^\]]*)\]\(attachment:[a-zA-Z0-9-]+\)/g, (_, label) => `[Screenshot: ${label || "image"}; view in Case Notes]`);
+    if (/<[a-z][^>]*>/i.test(plain)) {
+      plain = plain.replace(/<img\b[^>]*>/gi, tag => {
+        const label = /alt="([^"]*)"/i.exec(tag)?.[1] || "image";
+        return `[Screenshot: ${label}; view in Case Notes]`;
+      }).replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+        .replace(/<li\b[^>]*>/gi, "\n- ")
+        .replace(/<br\s*\/?>|<\/(?:p|div|h[1-6]|li|tr|blockquote|pre)>/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi, (full, entity) => {
+          const named = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
+          if (entity[0] !== "#") return named[entity.toLowerCase()] || full;
+          const code = entity[1].toLowerCase() === "x" ? parseInt(entity.slice(2), 16) : Number(entity.slice(1));
+          return code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : full;
+        }).replace(/\n{3,}/g, "\n\n").trim();
+    }
+    return plain;
+  }
   function copyText(note, now) {
-    return [...Object.entries(fields).map(([key, label]) => `${label}:\n${note[key]}`), `Time Spent:\n${duration(elapsed(note, now))}`].join("\n\n");
+    const extra = Toolkit.extraText(note);
+    return [...Object.entries(fields).map(([key, label]) => `${label}:\n${plainImages(note[key])}`), ...(extra ? [extra] : []), `Time Spent:\n${duration(elapsed(note, now))}`].join("\n\n");
+  }
+  function emailFile(note, now, content, token) {
+    if (!/^[a-zA-Z0-9-]+$/.test(token)) throw Error("Invalid email ID");
+    const base64 = text => btoa(Array.from(new TextEncoder().encode(text), byte => String.fromCharCode(byte)).join(""));
+    const wrap = text => (text.match(/.{1,76}/g) || []).join("\r\n");
+    const requestNumber = note.request.replace(/[\r\n]+/g, " ").trim();
+    const subject = `Service Request # ${requestNumber} - Case Notes`;
+    const subjectHeader = (Array.from(subject).join("").match(/.{1,20}/gu) || []).map(chunk => `=?UTF-8?B?${base64(chunk)}?=`).join("\r\n ");
+    const related = "related-" + token, alternative = "alternative-" + token;
+    const lines = ["MIME-Version: 1.0", "X-Unsent: 1", "Date: " + new Date(now).toUTCString(), "Subject: " + subjectHeader,
+      `Content-Type: multipart/related; boundary="${related}"`, "", `--${related}`,
+      `Content-Type: multipart/alternative; boundary="${alternative}"`, "",
+      `--${alternative}`, "Content-Type: text/plain; charset=UTF-8", "Content-Transfer-Encoding: base64", "", wrap(base64(copyText(note, now))),
+      `--${alternative}`, "Content-Type: text/html; charset=UTF-8", "Content-Transfer-Encoding: base64", "", wrap(base64(content.html)), `--${alternative}--`];
+    for (const [id, image] of Object.entries(content.images)) {
+      const match = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/.exec(image.data);
+      if (!/^[a-zA-Z0-9-]+$/.test(id) || !match) throw Error("Invalid screenshot");
+      const filename = `screenshot-${id}.${match[1] === "jpeg" ? "jpg" : match[1]}`;
+      lines.push(`--${related}`, `Content-Type: image/${match[1]}; name="${filename}"`, "Content-Transfer-Encoding: base64",
+        `Content-ID: <${id}@case-notes>`, `Content-Disposition: inline; filename="${filename}"`, "", wrap(match[2]));
+    }
+    lines.push(`--${related}--`, "");
+    return lines.join("\r\n");
   }
   function backup(state, now) {
     const snapshot = parse(JSON.stringify(state));
@@ -30,7 +74,7 @@ const CaseNotes = (() => {
   }
   function escalation(note, now) {
     return { problem: note.issue, tag: note.tag, os: note.os, country: note.country,
-      troubleshooting: note.notes, request: note.next, sourceNote: copyText(note, now) };
+      troubleshooting: plainImages(note.notes), request: plainImages(note.next), sourceNote: copyText(note, now) };
   }
   function parse(raw) {
     if (raw === null) return empty();
@@ -40,17 +84,20 @@ const CaseNotes = (() => {
     for (const note of state.cases) {
       // Older saved cases predate these optional fields; retain all existing data.
       if (note && typeof note === "object") {
-        for (const key of ["os", "country", "supportType", "logLocation"]) {
+        for (const key of ["os", "country", "supportType", "logLocation", "platform"]) {
           if (!Object.hasOwn(note, key)) note[key] = "";
         }
       }
       if (!note || typeof note.id !== "string" || ids.has(note.id) || ![note.created, note.updated, note.elapsed].every(n => Number.isFinite(n) && n >= 0) || !(note.started === null || (Number.isFinite(note.started) && note.started >= 0)) || !Object.keys(fields).every(key => typeof note[key] === "string")) throw Error("Invalid case");
+      if (!Object.hasOwn(note, "images")) note.images = {};
+      if (!note.images || typeof note.images !== "object" || Array.isArray(note.images) || !Object.entries(note.images).every(([id, image]) => /^[a-zA-Z0-9-]+$/.test(id) && image && typeof image.name === "string" && typeof image.data === "string" && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(image.data))) throw Error("Invalid screenshots");
+      Toolkit.validate(note);
       ids.add(note.id); if (note.started !== null) running++;
     }
     if (running > 1 || !(state.selected === null || ids.has(state.selected))) throw Error("Invalid selection");
     state.cases.sort((a, b) => b.created - a.created);
     return state;
   }
-  return { fields, empty, elapsed, stop, start, create, duration, copyText, backup, escalation, parse };
+  return { fields, empty, elapsed, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;

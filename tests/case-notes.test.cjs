@@ -124,3 +124,37 @@ test('deletion requires confirmation, preserves data on failure, and selects rem
   assert.equal(state.cases.length,1);assert.equal(state.selected,'1000');assert.equal(state.cases[0].notes,'First');assert.equal(state.cases[0].started,null);
   remove();state=C.parse(h.stored());assert.equal(state.cases.length,0);assert.equal(state.selected,null);assert.equal(h.get('welcome').hidden,false);
 });
+test('screenshots survive backup and restore while text exports contain labels only', () => {
+  const state=C.empty(),note=C.create(state,'screenshots',1000);
+  note.images={'image-1':{name:'Screenshot',data:'data:image/png;base64,aGVsbG8='}};
+  note.notes='## Investigation\n**Failed**\n![Screenshot](attachment:image-1)';
+  note.next='- Collect logs';
+  const restored=C.parse(C.backup(state,2000)).cases[0];
+  assert.deepEqual(restored.images,note.images);assert.equal(restored.notes,note.notes);
+  const text=C.copyText(note,2000);
+  assert.ok(text.includes('[Screenshot: Screenshot; view in Case Notes]'));
+  assert.ok(!text.includes('attachment:'));assert.ok(!text.includes('base64'));
+  assert.ok(!C.escalation(note,2000).troubleshooting.includes('attachment:'));
+  note.images['image-1'].data='data:image/svg+xml;base64,aGVsbG8=';
+  assert.throws(()=>C.parse(JSON.stringify(state)),/Invalid screenshots/);
+});
+test('HTML email contains inline MIME images and plain text alternative with safe Unicode subject', () => {
+  const state=C.empty(),note=C.create(state,'mail',1000);
+  note.request='123\r\nBcc: test';note.notes='**Café**';
+  const content={html:'<p><strong>Café</strong></p><img src="cid:img-1@case-notes">',images:{'img-1':{data:'data:image/png;base64,aGVsbG8='}}};
+  const eml=C.emailFile(note,11000,content,'test-id');
+  assert.ok(eml.includes('X-Unsent: 1\r\n'));assert.ok(eml.includes('multipart/alternative'));
+  assert.ok(eml.includes('Content-ID: <img-1@case-notes>'));assert.ok(eml.includes('Content-Disposition: inline;'));
+  assert.ok(eml.includes(Buffer.from(content.html).toString('base64').slice(0,76)));
+  assert.ok(!eml.includes('\r\nBcc:'));assert.equal(note.started,1000);
+});
+test('rich text copies and escalates as readable plain text while backup preserves HTML', () => {
+  const state=C.empty(),note=C.create(state,'rich',1000);
+  note.notes='<p><strong>Failure &amp; recovery</strong></p><ul><li>Collect logs</li><li>Retest</li></ul><img src="attachment:img-1" alt="Error screenshot">';
+  note.next='<p>Contact customer</p>';
+  const text=C.copyText(note,2000);
+  assert.ok(text.includes('Failure & recovery'));assert.ok(text.includes('- Collect logs'));
+  assert.ok(text.includes('[Screenshot: Error screenshot; view in Case Notes]'));assert.ok(!text.includes('<p>'));
+  assert.equal(C.escalation(note,2000).request,'Contact customer');
+  assert.equal(C.parse(C.backup(state,2000)).cases[0].notes,note.notes);
+});
