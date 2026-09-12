@@ -7,12 +7,10 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; connect-src 'self' https://github.com;">
   <title>Escalation Readiness Review</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
-  <script src="app.js" defer></script>
-  <script src="app.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -98,5 +96,18 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
       </aside>
     </div>
   </main>
+
+  <div id="logsModal" class="modal" hidden>
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="modal-content">
+      <button class="modal-close" id="closeModal" type="button" aria-label="Close modal">×</button>
+      <h2>Logs Required for Windows Systems</h2>
+      <p>For Windows systems, logs are essential for effective troubleshooting. Please visit the <a href="https://github.com/DellProSupportGse/Tools" target="_blank" rel="noopener noreferrer">DellProSupportGse/Tools</a> repository and run the appropriate log collection tool for your issue.</p>
+      <div class="modal-actions">
+        <button class="button primary" id="openToolsLink" type="button">Open DellProSupportGse/Tools</button>
+        <button class="button secondary" id="bypassLogs" type="button">Bypass (Sev 1 or Unable to Obtain)</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

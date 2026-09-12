@@ -4,22 +4,24 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 */
 "use strict";
 
-(function initTheme() {
-  const savedTheme = localStorage.getItem("theme");
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const theme = savedTheme || (prefersDark ? "dark" : "light");
-  document.documentElement.setAttribute("data-theme", theme);
-  
-  const themeToggle = document.getElementById("themeToggle");
-  if (themeToggle) {
-    themeToggle.addEventListener("click", () => {
-      const current = document.documentElement.getAttribute("data-theme");
-      const next = current === "dark" ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", next);
-      localStorage.setItem("theme", next);
-    });
-  }
-})();
+let logsBypassed = false;
+let pendingReview = null;
+let formHasData = false;
+
+const savedTheme = localStorage.getItem("theme");
+const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+const theme = savedTheme || (prefersDark ? "dark" : "light");
+document.documentElement.setAttribute("data-theme", theme);
+
+const themeToggle = document.getElementById("themeToggle");
+if (themeToggle) {
+  themeToggle.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme");
+    const next = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("theme", next);
+  });
+}
 
 const fieldIds = ["problem", "impact", "timeline", "expected", "country", "tag", "os", "errors", "reproduction", "troubleshooting", "results", "evidence", "changes", "workaround", "request"];
 const required = ["problem", "impact", "timeline", "expected", "country", "tag", "os", "reproduction", "troubleshooting", "results", "evidence", "request"];
@@ -33,15 +35,18 @@ const resultTerms = /\b(result|observed|confirmed|remained|changed|passed|failed
 
 const samples = {
   weak: { problem:"System not working", impact:"Users affected", timeline:"Started recently", expected:"It should work", country:"US", tag:"Server", os:"Windows", errors:"Unknown", reproduction:"Try to use it", troubleshooting:"Restarted and checked things", results:"No change", evidence:"No", changes:"Unknown", workaround:"None", request:"Please help" },
-  strong: { problem:"PowerEdge R750 iDRAC web interface returns HTTP 503 after login while Redfish API remains available. The issue affects only the management UI on one host.", impact:"The infrastructure team cannot use the UI to complete a scheduled firmware compliance review for host DC2-HV-047. One of 24 hosts is affected; production workloads continue running, but the maintenance window closes at 22:00 UTC.", timeline:"First observed 2026-09-10 at 14:18 UTC after the monthly credential rotation. Reproduces on every login attempt. Last confirmed at 16:42 UTC.", expected:"After authentication, the iDRAC dashboard should load and display system health and firmware inventory.", country:"US", tag:"PowerEdge R750, service tag ABC1234, asset DC2-HV-047", os:"Windows Server 2022 Standard Edition", errors:"Browser network trace: GET /restgui/start.html returned 503 at 2026-09-10 16:42:11 UTC. Lifecycle log event: RAC0182 at 16:41:58 UTC. No TLS or DNS errors observed.", reproduction:"1. Browse to the management address from VLAN 120.\n2. Authenticate with an authorized local test account.\n3. Wait for the dashboard to load.\n4. Observe HTTP 503 after approximately 30 seconds.\n5. Call /redfish/v1/Systems with the same account and observe HTTP 200.", troubleshooting:"1. Tested Chrome and Edge to exclude browser cache.\n2. Tested from a second workstation on VLAN 120.\n3. Restarted only the iDRAC management controller.\n4. Exported the Lifecycle Controller log and browser network trace.\n5. Compared settings with healthy host DC2-HV-046.", results:"1. Both browsers returned the same 503.\n2. The second workstation reproduced the failure.\n3. Controller restart restored the UI for 12 minutes, then the 503 returned.\n4. RAC0182 appears immediately before each failure.\n5. Proxy and session-timeout settings match the healthy host; firmware differs (7.10.30.00 versus 7.10.20.00).", evidence:"Yes", changes:"iDRAC firmware updated from 7.10.20.00 to 7.10.30.00 on 2026-09-09 at 23:20 UTC. Credentials rotated at 13:50 UTC today. No network configuration changes are known.", workaround:"Redfish API remains available for inventory. There is no workaround for UI-only tasks; maintenance can be deferred for 24 hours.", request:"Please determine whether RAC0182 and the recurring UI service failure are a known issue in iDRAC9 7.10.30.00 and advise whether rollback to 7.10.20.00 is supported before the maintenance window closes." } errors:"Browser network trace: GET /restgui/start.html returned 503 at 2026-09-10 16:42:11 UTC. Lifecycle log event: RAC0182 at 16:41:58 UTC. No TLS or DNS errors observed.", reproduction:"1. Browse to the management address from VLAN 120.\n2. Authenticate with an authorized local test account.\n3. Wait for the dashboard to load.\n4. Observe HTTP 503 after approximately 30 seconds.\n5. Call /redfish/v1/Systems with the same account and observe HTTP 200.", troubleshooting:"1. Tested Chrome and Edge to exclude browser cache.\n2. Tested from a second workstation on VLAN 120.\n3. Restarted only the iDRAC management controller.\n4. Exported the Lifecycle Controller log and browser network trace.\n5. Compared settings with healthy host DC2-HV-046.", results:"1. Both browsers returned the same 503.\n2. The second workstation reproduced the failure.\n3. Controller restart restored the UI for 12 minutes, then the 503 returned.\n4. RAC0182 appears immediately before each failure.\n5. Proxy and session-timeout settings match the healthy host; firmware differs (7.10.30.00 versus 7.10.20.00).", evidence:"Attached: DC2-HV-047_LC-log_20260910.zip and browser-trace-1642.har. Relevant timestamps are 16:41–16:43 UTC. Internal incident INC-10482.", changes:"iDRAC firmware updated from 7.10.20.00 to 7.10.30.00 on 2026-09-09 at 23:20 UTC. Credentials rotated at 13:50 UTC today. No network configuration changes are known.", workaround:"Redfish API remains available for inventory. There is no workaround for UI-only tasks; maintenance can be deferred for 24 hours.", request:"Please determine whether RAC0182 and the recurring UI service failure are a known issue in iDRAC9 7.10.30.00 and advise whether rollback to 7.10.20.00 is supported before the maintenance window closes."
-  }
+  strong: { problem:"PowerEdge R750 iDRAC web interface returns HTTP 503 after login while Redfish API remains available. The issue affects only the management UI on one host.", impact:"The infrastructure team cannot use the UI to complete a scheduled firmware compliance review for host DC2-HV-047. One of 24 hosts is affected; production workloads continue running, but the maintenance window closes at 22:00 UTC.", timeline:"First observed 2026-09-10 at 14:18 UTC after the monthly credential rotation. Reproduces on every login attempt. Last confirmed at 16:42 UTC.", expected:"After authentication, the iDRAC dashboard should load and display system health and firmware inventory.", country:"US", tag:"PowerEdge R750, service tag ABC1234, asset DC2-HV-047", os:"Windows Server 2022 Standard Edition", errors:"Browser network trace: GET /restgui/start.html returned 503 at 2026-09-10 16:42:11 UTC. Lifecycle log event: RAC0182 at 16:41:58 UTC. No TLS or DNS errors observed.", reproduction:"1. Browse to the management address from VLAN 120.\n2. Authenticate with an authorized local test account.\n3. Wait for the dashboard to load.\n4. Observe HTTP 503 after approximately 30 seconds.\n5. Call /redfish/v1/Systems with the same account and observe HTTP 200.", troubleshooting:"1. Tested Chrome and Edge to exclude browser cache.\n2. Tested from a second workstation on VLAN 120.\n3. Restarted only the iDRAC management controller.\n4. Exported the Lifecycle Controller log and browser network trace.\n5. Compared settings with healthy host DC2-HV-046.", results:"1. Both browsers returned the same 503.\n2. The second workstation reproduced the failure.\n3. Controller restart restored the UI for 12 minutes, then the 503 returned.\n4. RAC0182 appears immediately before each failure.\n5. Proxy and session-timeout settings match the healthy host; firmware differs (7.10.30.00 versus 7.10.20.00).", evidence:"Yes", changes:"iDRAC firmware updated from 7.10.20.00 to 7.10.30.00 on 2026-09-09 at 23:20 UTC. Credentials rotated at 13:50 UTC today. No network configuration changes are known.", workaround:"Redfish API remains available for inventory. There is no workaround for UI-only tasks; maintenance can be deferred for 24 hours.", request:"Please determine whether RAC0182 and the recurring UI service failure are a known issue in iDRAC9 7.10.30.00 and advise whether rollback to 7.10.20.00 is supported before the maintenance window closes." }
 };
 
 function value(id) { return document.getElementById(id).value.trim(); }
 function addFinding(target, field, reason, kind) { target.push({ field, reason, kind }); }
 function hasDetail(text, minimum) { return text.length >= minimum && !weakPhrases.test(text); }
 function numberedSteps(text) { return (text.match(/(?:^|\n)\s*(?:\d+[.)]|[-•])/g) || []).length; }
-function data() { return Object.fromEntries(fieldIds.map(id => [id, value(id)])); }
+function data() { 
+  const formData = Object.fromEntries(fieldIds.map(id => [id, value(id)]));
+  formHasData = Object.values(formData).some(v => v.length > 0);
+  return formData;
+}
 
 function evaluate(form) {
   const blockers = [], warnings = [], strengths = [];
@@ -59,6 +64,11 @@ function evaluate(form) {
   if (form.results && (!hasDetail(form.results, 55) || !resultTerms.test(form.results))) addFinding(warnings, "results", "Record the observed outcome of each troubleshooting action.", "warning");
   if (!form.errors) addFinding(warnings, "errors", "Provide exact errors and timestamps, or explicitly state that no error is displayed.", "warning");
   if (!form.evidence) addFinding(warnings, "evidence", "Please indicate whether logs have been uploaded to the case.", "warning");
+  else if (form.evidence === "No" && !logsBypassed) {
+    const os = form.os.toLowerCase();
+    const isWindows = os.includes("windows") || os.includes("win");
+    if (isWindows) addFinding(warnings, "evidence", "Logs are strongly recommended for effective troubleshooting on Windows systems.", "warning");
+  }
   if (!form.changes) addFinding(warnings, "changes", "Document recent changes or explicitly state that none are known.", "warning");
   if (!form.workaround) addFinding(warnings, "workaround", "Describe the current workaround and limitations, or state that none exists.", "warning");
   if (form.request && (!hasDetail(form.request, 35) || /^(help|please help|investigate|advise)$/i.test(form.request))) addFinding(warnings, "request", "State the specific decision, diagnosis, or action needed from the senior technician.", "warning");
@@ -141,6 +151,8 @@ function loadSample(kind) {
     document.getElementById(id).value = samples[kind][id] || "";
     document.getElementById(id).classList.remove("invalid");
   });
+  logsBypassed = false;
+  formHasData = true;
   render(evaluate(data()));
 }
 
@@ -148,16 +160,104 @@ document.getElementById("escalationForm").addEventListener("submit", event => {
   event.preventDefault();
   const form = data();
   required.forEach(id => document.getElementById(id).classList.toggle("invalid", !form[id]));
-  render(evaluate(form));
+  
+  const os = form.os.toLowerCase();
+  const isWindows = os.includes("windows") || os.includes("win");
+  const result = evaluate(form);
+  
+  if (isWindows && form.evidence === "No" && !logsBypassed) {
+    pendingReview = result;
+    const modal = document.getElementById("logsModal");
+    if (modal) {
+      modal.hidden = false;
+    }
+  } else {
+    render(result);
+  }
 });
 document.getElementById("loadWeak").addEventListener("click", () => loadSample("weak"));
 document.getElementById("loadStrong").addEventListener("click", () => loadSample("strong"));
 document.getElementById("clearForm").addEventListener("click", () => {
+  if (formHasData) {
+    if (confirm("Are you sure you want to clear the form? All your selections will be lost.")) {
+      clearForm();
+    }
+  } else {
+    clearForm();
+  }
+});
+
+function clearForm() {
   document.getElementById("escalationForm").reset();
   fieldIds.forEach(id => document.getElementById(id).classList.remove("invalid"));
   document.getElementById("emptyState").hidden = false;
   document.getElementById("reviewState").hidden = true;
   document.getElementById("resultsPanel").classList.add("empty");
+  logsBypassed = false;
+  formHasData = false;
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setupEventListeners);
+} else {
+  setupEventListeners();
+}
+
+function setupEventListeners() {
+  const modalOverlay = document.getElementById("modalOverlay");
+  const closeModalBtn = document.getElementById("closeModal");
+  const openToolsBtn = document.getElementById("openToolsLink");
+  const bypassLogsBtn = document.getElementById("bypassLogs");
+  
+  if (modalOverlay) modalOverlay.addEventListener("click", closeModal);
+  if (closeModalBtn) closeModalBtn.addEventListener("click", closeModal);
+  if (openToolsBtn) openToolsBtn.addEventListener("click", () => {
+    window.open("https://github.com/DellProSupportGse/Tools", "_blank", "noopener,noreferrer");
+  });
+  if (bypassLogsBtn) bypassLogsBtn.addEventListener("click", () => {
+    closeModal();
+    logsBypassed = true;
+    const evidenceField = document.getElementById("evidence");
+    if (evidenceField) evidenceField.classList.remove("invalid");
+    if (pendingReview) {
+      render(pendingReview);
+      pendingReview = null;
+    }
+  });
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const modal = document.getElementById("logsModal");
+    if (modal && !modal.hidden) {
+      closeModal();
+    }
+  }
+});
+
+window.addEventListener("beforeunload", (e) => {
+  if (formHasData) {
+    e.preventDefault();
+    e.returnValue = "";
+    return "";
+  }
+});
+
+function closeModal() {
+  const modal = document.getElementById("logsModal");
+  if (modal) {
+    modal.hidden = true;
+  }
+}
+
+document.getElementById("openToolsLink").addEventListener("click", () => {
+  window.open("https://github.com/DellProSupportGse/Tools", "_blank", "noopener,noreferrer");
+});
+
+document.getElementById("bypassLogs").addEventListener("click", () => {
+  closeModal();
+  logsBypassed = true;
+  document.getElementById("evidence").classList.remove("invalid");
 });
 
 function copyEscalationData() {
