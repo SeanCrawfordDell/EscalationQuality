@@ -104,3 +104,5 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#111c2f; color:#d
 .modal-actions { display:flex; gap:12px; justify-content:flex-end; }
 @media (max-width:1000px) { .workspace { grid-template-columns:1fr; } .results-shell { position:static; } }
 @media (max-width:650px) { main { padding:24px 14px 45px; } .topbar { padding:0 14px; } .privacy { display:none; } .hero { display:block; } .hero-actions { margin-top:18px; flex-wrap:wrap; } .field-grid { grid-template-columns:1fr; } .field.wide { grid-column:auto; } .panel { padding:18px; } .score-ring { width:78px; height:78px; } }
+.home-link { color:inherit; text-decoration:none; }
+.home-link:focus-visible { outline:3px solid #4a9eff; outline-offset:5px; }

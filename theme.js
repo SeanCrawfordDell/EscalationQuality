@@ -1,0 +1,41 @@
+"use strict";
+// Shared by every tool. No saved preference means follow the operating system.
+(() => {
+  const system = window.matchMedia("(prefers-color-scheme: dark)");
+  const valid = value => value === "dark" || value === "light" ? value : null;
+  let preference = null;
+  try { preference = valid(localStorage.getItem("theme")); } catch { /* Storage may be unavailable. */ }
+  function apply() {
+    const dark = (preference || (system.matches ? "dark" : "light")) === "dark";
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    const toggle = document.getElementById("themeToggle");
+    if (toggle) {
+      toggle.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
+      toggle.title = dark ? "Switch to light mode" : "Switch to dark mode";
+    }
+    const label = document.getElementById("themeLabel");
+    if (label) label.textContent = dark ? "Light" : "Dark";
+  }
+  function save(value) {
+    preference = value;
+    try {
+      if (value === null) localStorage.removeItem("theme");
+      else localStorage.setItem("theme", value);
+    } catch { /* Keep the selection for this page when storage is blocked. */ }
+    apply();
+  }
+  apply(); // Run before styles render to avoid a flash of the wrong theme.
+  document.addEventListener("DOMContentLoaded", () => {
+    apply();
+    document.getElementById("themeToggle")?.addEventListener("click", () => {
+      save(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+    });
+  });
+  system.addEventListener("change", apply);
+  window.addEventListener("storage", event => {
+    if (event.key === "theme" || event.key === null) {
+      preference = valid(event.newValue);
+      apply();
+    }
+  });
+})();

@@ -8,25 +8,10 @@ let logsBypassed = false;
 let pendingReview = null;
 let formHasData = false;
 
-const savedTheme = localStorage.getItem("theme");
-const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-const theme = savedTheme || (prefersDark ? "dark" : "light");
-document.documentElement.setAttribute("data-theme", theme);
-
-const themeToggle = document.getElementById("themeToggle");
-if (themeToggle) {
-  themeToggle.addEventListener("click", () => {
-    const current = document.documentElement.getAttribute("data-theme");
-    const next = current === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
-    localStorage.setItem("theme", next);
-  });
-}
-
-const fieldIds = ["problem", "impact", "timeline", "expected", "country", "tag", "os", "errors", "reproduction", "troubleshooting", "results", "evidence", "changes", "workaround", "request"];
+const fieldIds = ["problem", "impact", "timeline", "expected", "country", "tag", "os", "errors", "reproduction", "troubleshooting", "results", "evidence", "changes", "workaround", "request", "sourceNote"];
 const required = ["problem", "impact", "timeline", "expected", "country", "tag", "os", "reproduction", "troubleshooting", "results", "evidence", "request"];
 const labels = {
-  problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", country: "customer country", tag: "system type / service tag", os: "operating system & version", errors: "exact errors and timestamps", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "are there logs uploaded to the case", changes: "recent changes", workaround: "current workaround", request: "requested senior assistance"
+  sourceNote: "Original case note", problem: "problem statement", impact: "business impact", timeline: "timeline and frequency", expected: "expected behavior", country: "customer country", tag: "system type / service tag", os: "OS/Solution", errors: "exact errors and timestamps", reproduction: "reproduction steps", troubleshooting: "troubleshooting performed", results: "results and observations", evidence: "are there logs uploaded to the case", changes: "recent changes", workaround: "current workaround", request: "requested senior assistance"
 };
 const weakPhrases = /^(n\/a|na|none|unknown|not working|broken|issue|problem|see above|same)$/i;
 const specificityTerms = /\b(error|code|version|build|firmware|user|device|host|server|client|minute|hour|percent|failed|timeout|intermittent|always|every|since|affected|blocked)\b/i;
@@ -34,8 +19,8 @@ const evidenceTerms = /\b(log|trace|screenshot|diagnostic|timestamp|event|dump|b
 const resultTerms = /\b(result|observed|confirmed|remained|changed|passed|failed|resolved|returned|showed|revealed|reproduced|did not|no change)\b/i;
 
 const samples = {
-  weak: { problem:"System not working", impact:"Users affected", timeline:"Started recently", expected:"It should work", country:"US", tag:"Server", os:"Windows", errors:"Unknown", reproduction:"Try to use it", troubleshooting:"Restarted and checked things", results:"No change", evidence:"No", changes:"Unknown", workaround:"None", request:"Please help" },
-  strong: { problem:"PowerEdge R750 iDRAC web interface returns HTTP 503 after login while Redfish API remains available. The issue affects only the management UI on one host.", impact:"The infrastructure team cannot use the UI to complete a scheduled firmware compliance review for host DC2-HV-047. One of 24 hosts is affected; production workloads continue running, but the maintenance window closes at 22:00 UTC.", timeline:"First observed 2026-09-10 at 14:18 UTC after the monthly credential rotation. Reproduces on every login attempt. Last confirmed at 16:42 UTC.", expected:"After authentication, the iDRAC dashboard should load and display system health and firmware inventory.", country:"US", tag:"PowerEdge R750, service tag ABC1234, asset DC2-HV-047", os:"Windows Server 2022 Standard Edition", errors:"Browser network trace: GET /restgui/start.html returned 503 at 2026-09-10 16:42:11 UTC. Lifecycle log event: RAC0182 at 16:41:58 UTC. No TLS or DNS errors observed.", reproduction:"1. Browse to the management address from VLAN 120.\n2. Authenticate with an authorized local test account.\n3. Wait for the dashboard to load.\n4. Observe HTTP 503 after approximately 30 seconds.\n5. Call /redfish/v1/Systems with the same account and observe HTTP 200.", troubleshooting:"1. Tested Chrome and Edge to exclude browser cache.\n2. Tested from a second workstation on VLAN 120.\n3. Restarted only the iDRAC management controller.\n4. Exported the Lifecycle Controller log and browser network trace.\n5. Compared settings with healthy host DC2-HV-046.", results:"1. Both browsers returned the same 503.\n2. The second workstation reproduced the failure.\n3. Controller restart restored the UI for 12 minutes, then the 503 returned.\n4. RAC0182 appears immediately before each failure.\n5. Proxy and session-timeout settings match the healthy host; firmware differs (7.10.30.00 versus 7.10.20.00).", evidence:"Yes", changes:"iDRAC firmware updated from 7.10.20.00 to 7.10.30.00 on 2026-09-09 at 23:20 UTC. Credentials rotated at 13:50 UTC today. No network configuration changes are known.", workaround:"Redfish API remains available for inventory. There is no workaround for UI-only tasks; maintenance can be deferred for 24 hours.", request:"Please determine whether RAC0182 and the recurring UI service failure are a known issue in iDRAC9 7.10.30.00 and advise whether rollback to 7.10.20.00 is supported before the maintenance window closes." }
+  weak: { problem:"System not working", impact:"Users affected", timeline:"Started recently", expected:"It should work", country:"US", tag:"Server", os:"Windows Server", errors:"Unknown", reproduction:"Try to use it", troubleshooting:"Restarted and checked things", results:"No change", evidence:"No", changes:"Unknown", workaround:"None", request:"Please help" },
+  strong: { problem:"PowerEdge R750 iDRAC web interface returns HTTP 503 after login while Redfish API remains available. The issue affects only the management UI on one host.", impact:"The infrastructure team cannot use the UI to complete a scheduled firmware compliance review for host DC2-HV-047. One of 24 hosts is affected; production workloads continue running, but the maintenance window closes at 22:00 UTC.", timeline:"First observed 2026-09-10 at 14:18 UTC after the monthly credential rotation. Reproduces on every login attempt. Last confirmed at 16:42 UTC.", expected:"After authentication, the iDRAC dashboard should load and display system health and firmware inventory.", country:"US", tag:"PowerEdge R750, service tag ABC1234, asset DC2-HV-047", os:"Windows Server", errors:"Browser network trace: GET /restgui/start.html returned 503 at 2026-09-10 16:42:11 UTC. Lifecycle log event: RAC0182 at 16:41:58 UTC. No TLS or DNS errors observed.", reproduction:"1. Browse to the management address from VLAN 120.\n2. Authenticate with an authorized local test account.\n3. Wait for the dashboard to load.\n4. Observe HTTP 503 after approximately 30 seconds.\n5. Call /redfish/v1/Systems with the same account and observe HTTP 200.", troubleshooting:"1. Tested Chrome and Edge to exclude browser cache.\n2. Tested from a second workstation on VLAN 120.\n3. Restarted only the iDRAC management controller.\n4. Exported the Lifecycle Controller log and browser network trace.\n5. Compared settings with healthy host DC2-HV-046.", results:"1. Both browsers returned the same 503.\n2. The second workstation reproduced the failure.\n3. Controller restart restored the UI for 12 minutes, then the 503 returned.\n4. RAC0182 appears immediately before each failure.\n5. Proxy and session-timeout settings match the healthy host; firmware differs (7.10.30.00 versus 7.10.20.00).", evidence:"Yes", changes:"iDRAC firmware updated from 7.10.20.00 to 7.10.30.00 on 2026-09-09 at 23:20 UTC. Credentials rotated at 13:50 UTC today. No network configuration changes are known.", workaround:"Redfish API remains available for inventory. There is no workaround for UI-only tasks; maintenance can be deferred for 24 hours.", request:"Please determine whether RAC0182 and the recurring UI service failure are a known issue in iDRAC9 7.10.30.00 and advise whether rollback to 7.10.20.00 is supported before the maintenance window closes." }
 };
 
 function value(id) { return document.getElementById(id).value.trim(); }
@@ -151,6 +136,7 @@ function loadSample(kind) {
     document.getElementById(id).value = samples[kind][id] || "";
     document.getElementById(id).classList.remove("invalid");
   });
+  document.getElementById("sourceNotePanel").hidden = true;
   logsBypassed = false;
   formHasData = true;
   render(evaluate(data()));
@@ -189,6 +175,7 @@ document.getElementById("clearForm").addEventListener("click", () => {
 
 function clearForm() {
   document.getElementById("escalationForm").reset();
+  document.getElementById("sourceNotePanel").hidden = true;
   fieldIds.forEach(id => document.getElementById(id).classList.remove("invalid"));
   document.getElementById("emptyState").hidden = false;
   document.getElementById("reviewState").hidden = true;
@@ -284,3 +271,34 @@ function copyEscalationData() {
 }
 
 document.getElementById("copyButton").addEventListener("click", copyEscalationData);
+
+// Each handoff is consumed once; refreshing starts a fresh, empty review.
+(() => {
+  const token = new URLSearchParams(location.hash.slice(1)).get("import");
+  if (!token || !/^[a-zA-Z0-9-]+$/.test(token)) return;
+  const key = "dell-support.escalation." + token;
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return;
+    const imported = JSON.parse(raw);
+    const mapped = ["problem", "tag", "os", "country", "troubleshooting", "request", "sourceNote"];
+    if (!imported || !mapped.every(id => typeof imported[id] === "string")) throw Error("Invalid note");
+    mapped.forEach(id => {
+      const input = document.getElementById(id);
+      if (id === "os" || id === "country") {
+        const option = Array.from(input.options).find(item => item.value === imported[id] || item.textContent.toLowerCase() === imported[id].toLowerCase());
+        if (!option && imported[id]) {
+          const legacy = document.createElement("option");
+          legacy.value = imported[id]; legacy.textContent = imported[id]; input.append(legacy);
+        }
+        input.value = option ? option.value : imported[id];
+      } else input.value = imported[id];
+    });
+    document.getElementById("sourceNotePanel").hidden = false;
+    formHasData = true;
+    sessionStorage.removeItem(key);
+    history.replaceState(null, "", location.pathname + location.search);
+  } catch {
+    alert("The case note could not be imported. Return to Case Notes and try Escalate to DE again.");
+  }
+})();

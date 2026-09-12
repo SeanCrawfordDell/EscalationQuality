@@ -1,0 +1,12 @@
+
+:root { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+.theme-controls { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.theme-controls button { font:600 12px "Segoe UI",Arial,sans-serif; cursor:pointer; border:1px solid #b5cbd8; border-radius:6px; padding:9px 10px; background:transparent; color:inherit; white-space:nowrap; }
+.theme-controls button:hover { background:#0076ad18; }
+.theme-controls button[aria-pressed="true"] { border-color:#0076ad; background:#e0f1fb; color:#005c88; }
+.theme-controls button:focus-visible { outline:3px solid #4a9eff; outline-offset:3px; }
+.topbar .theme-controls button { color:#e4edf5; border-color:#557086; }
+.topbar .theme-controls button[aria-pressed="true"], [data-theme="dark"] .theme-controls button[aria-pressed="true"] { background:#173e59; color:#a5dcff; border-color:#69b8e6; }
+[data-theme="dark"] .theme-controls button { border-color:#496476; }
+@media(max-width:650px) { .header { flex-wrap:wrap; height:auto; min-height:100px; gap:14px; padding-block:16px; } .header nav { margin-left:auto; } .header .theme-controls { width:100%; } .topbar { height:auto; min-height:64px; flex-wrap:wrap; gap:12px; padding-block:12px; } }

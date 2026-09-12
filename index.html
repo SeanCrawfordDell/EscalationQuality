@@ -1,113 +1,61 @@
-<!--
-Secure code generated utilizing Code Guardian.
-Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-001.4, CG-INPUT-001.5, CG-INPUT-001.6, CG-INPUT-001.7, CG-INPUT-001.8
--->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; connect-src 'self' https://github.com;">
-  <title>Escalation Readiness Review</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css">
-  <script src="app.js" defer></script>
+  <meta name="description" content="Dell Pro-Support Technical Support Assistant: a central workspace for technical support tools and escalation readiness.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self';">
+  <script src="theme.js"></script>
+  <title>Dell Pro-Support Technical Support Assistant</title>
+  <link rel="stylesheet" href="landing.css">
+  <link rel="stylesheet" href="theme.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand"><span class="brand-mark">ER</span><span>Escalation Review</span></div>
-    <div class="topbar-right">
-      <button class="button ghost theme-toggle" id="themeToggle" type="button" aria-label="Toggle theme">
-        <span class="theme-icon">◐</span>
-      </button>
-      <span class="privacy">Local prototype · Data stays in this browser</span>
-    </div>
-  </header>
-
-  <main>
-    <section class="hero">
-      <div>
-        <p class="eyebrow">QUALITY GATE</p>
-        <h1>Is this escalation ready?</h1>
-        <p>Check that a senior technician has enough specific, actionable evidence to begin work.</p>
+  <a class="skip-link" href="#tools">Skip to tools</a>
+  <header class="header">
+    <a class="brand" href="index.html" aria-label="Dell Pro-Support home"><span class="dell">DELL</span><span class="brand-divider"></span><span>Pro-Support</span></a><div class="theme-controls" role="group" aria-label="Appearance">
+        <button class="theme-switch" id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button>
       </div>
-      <div class="hero-actions">
-        <button class="button secondary" id="loadWeak" type="button">Load weak sample</button>
-        <button class="button secondary" id="loadStrong" type="button">Load strong sample</button>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-content">
+        <p class="eyebrow">DELL PRO-SUPPORT</p>
+        <h1 id="page-title">Technical Support<br><span>Assistant.</span></h1>
+        <p class="intro">Your starting point for better support. Find the tools to prepare your next step and move every case forward with confidence.</p>
+        <a class="button" href="#tools">Explore support tools <span aria-hidden="true">↓</span></a>
+        <div class="hero-note"><span class="dot"></span>Built for the technical support workflow</div>
+      </div>
+      <div class="illustration" aria-hidden="true">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="mini-card top-card"><span class="mini-icon">✓</span><div>Clear context<small>Better handoffs start here</small></div></div>
+        <div class="core"><svg viewBox="0 0 64 64" fill="none"><path d="M14 35v-7a18 18 0 0 1 36 0v7M14 31h5v17h-5a5 5 0 0 1-5-5v-7a5 5 0 0 1 5-5ZM50 31h-5v17h5a5 5 0 0 0 5-5v-7a5 5 0 0 0-5-5ZM49 48c0 7-6 9-17 9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><rect x="27" y="53" width="10" height="7" rx="3" fill="currentColor"/></svg></div>
+        <div class="mini-card bottom-card"><span class="mini-icon">↗</span><div>Confident next steps<small>Tools that support your expertise</small></div></div>
+        <span class="spark spark-one">+</span><span class="spark spark-two">+</span>
       </div>
     </section>
-
-    <div class="workspace">
-      <form id="escalationForm" novalidate>
-        <section class="panel">
-          <div class="section-heading"><span>1</span><div><h2>Issue and impact</h2><p>Describe what is happening and why it matters.</p></div></div>
-          <div class="field-grid">
-            <label class="field wide">Problem statement <b>Required</b><textarea id="problem" maxlength="3000" placeholder="What is failing? Include the affected component and scope."></textarea><small>Describe the issue in concrete terms, not simply “not working.”</small></label>
-            <label class="field">Business impact <b>Required</b><textarea id="impact" maxlength="2000" placeholder="Who is affected? How many? What business process is blocked?"></textarea></label>
-            <label class="field">Timeline and frequency <b>Required</b><textarea id="timeline" maxlength="1500" placeholder="When did it begin? Constant or intermittent? Last occurrence?"></textarea></label>
-            <label class="field">Expected behavior <b>Required</b><textarea id="expected" maxlength="1500" placeholder="What should happen?"></textarea></label>
-            <label class="field">Customer Country <b>Required</b><select id="country" required><option value="">Select country</option><option value="US">United States</option><option value="CA">Canada</option><option value="GB">United Kingdom</option><option value="DE">Germany</option><option value="FR">France</option><option value="IT">Italy</option><option value="ES">Spain</option><option value="NL">Netherlands</option><option value="BE">Belgium</option><option value="AT">Austria</option><option value="CH">Switzerland</option><option value="SE">Sweden</option><option value="NO">Norway</option><option value="DK">Denmark</option><option value="FI">Finland</option><option value="PL">Poland</option><option value="CZ">Czech Republic</option><option value="HU">Hungary</option><option value="RO">Romania</option><option value="GR">Greece</option><option value="PT">Portugal</option><option value="IE">Ireland</option><option value="LU">Luxembourg</option><option value="JP">Japan</option><option value="CN">China</option><option value="KR">South Korea</option><option value="TW">Taiwan</option><option value="SG">Singapore</option><option value="HK">Hong Kong</option><option value="IN">India</option><option value="AU">Australia</option><option value="NZ">New Zealand</option><option value="BR">Brazil</option><option value="MX">Mexico</option><option value="AR">Argentina</option><option value="CL">Chile</option><option value="CO">Colombia</option><option value="ZA">South Africa</option><option value="AE">United Arab Emirates</option><option value="SA">Saudi Arabia</option><option value="IL">Israel</option><option value="TR">Turkey</option><option value="RU">Russia</option><option value="UA">Ukraine</option><option value="MY">Malaysia</option><option value="TH">Thailand</option><option value="VN">Vietnam</option><option value="ID">Indonesia</option><option value="PH">Philippines</option><option value="Other">Other</option></select></label>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="section-heading"><span>2</span><div><h2>Technical context</h2><p>Give enough context to locate and reproduce the failure.</p></div></div>
-          <div class="field-grid">
-            <label class="field">System Type / Service Tag <b>Required</b><input id="tag" maxlength="250" placeholder="System Type, Service Tag"></label>
-            <label class="field">Operating System & Version <b>Required</b><input id="os" maxlength="250" placeholder="e.g., Windows Server 2022, RHEL 8.8, Ubuntu 22.04"></label>
-            <label class="field wide">Exact errors and timestamps <textarea id="errors" maxlength="3000" placeholder="Paste exact error text, codes, and occurrence times, or state that no error is shown."></textarea></label>
-            <label class="field wide">Reproduction steps <b>Required</b><textarea id="reproduction" maxlength="3000" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea></label>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="section-heading"><span>3</span><div><h2>Investigation</h2><p>Show what was tested, what happened, and what evidence is available.</p></div></div>
-          <div class="field-grid">
-            <label class="field wide">Troubleshooting performed <b>Required</b><textarea id="troubleshooting" maxlength="4000" placeholder="List each action taken and why."></textarea></label>
-            <label class="field wide">Results and observations <b>Required</b><textarea id="results" maxlength="4000" placeholder="Document the result of each action, including what changed or did not change."></textarea></label>
-            <label class="field">Are there Logs uploaded to the case <b>Required</b><select id="evidence" required><option value="">Select option</option><option value="Yes">Yes</option><option value="No">No</option></select></label>
-            <label class="field">Recent changes <textarea id="changes" maxlength="1500" placeholder="Updates, configuration changes, deployments, or “no known changes.”"></textarea></label>
-            <label class="field">Current workaround <textarea id="workaround" maxlength="1500" placeholder="Workaround and limitations, or “none available.”"></textarea></label>
-            <label class="field">Requested senior assistance <b>Required</b><textarea id="request" maxlength="2000" placeholder="What specifically should the senior technician investigate or decide?"></textarea></label>
-          </div>
-        </section>
-
-        <div class="form-actions">
-          <button class="button ghost" id="clearForm" type="button">Clear</button>
-          <button class="button primary" type="submit">Review escalation</button>
-        </div>
-      </form>
-
-      <aside class="results-shell" aria-live="polite">
-        <section class="panel results empty" id="resultsPanel">
-          <div id="emptyState"><div class="empty-icon">✓</div><h2>Ready when you are</h2><p>Complete the form and run the review. You’ll receive a transparent score and field-level feedback.</p></div>
-          <div id="reviewState" hidden>
-            <div class="score-header"><div><p class="eyebrow">READINESS RESULT</p><span class="status-pill" id="statusPill"></span><h2 id="resultTitle"></h2><p id="resultSummary"></p></div><div class="score-ring" id="scoreRing"><strong id="scoreValue">0</strong><small>/ 100</small></div></div>
-            <div class="copy-section" id="copySection" hidden><button class="button primary" id="copyButton" type="button">Copy escalation data</button></div>
-            <div class="meter"><span id="scoreBar"></span></div>
-            <div class="category-grid" id="categoryGrid"></div>
-            <div class="feedback-section" id="blockersSection"><h3>Blocking issues <span id="blockerCount"></span></h3><div id="blockers"></div></div>
-            <div class="feedback-section" id="warningsSection"><h3>Recommendations <span id="warningCount"></span></h3><div id="warnings"></div></div>
-            <div class="feedback-section" id="strengthsSection"><h3>What’s working</h3><div id="strengths"></div></div>
-            <details><summary>Review JSON</summary><pre id="jsonOutput"></pre></details>
-          </div>
-        </section>
-        <section class="panel rubric"><h3>How this prototype scores</h3><dl><div><dt>Completeness</dt><dd>30</dd></div><div><dt>Specificity</dt><dd>20</dd></div><div><dt>Reproducibility</dt><dd>15</dd></div><div><dt>Evidence</dt><dd>15</dd></div><div><dt>Troubleshooting</dt><dd>15</dd></div><div><dt>Clear request</dt><dd>5</dd></div></dl><p>Ready requires 75+ points and no blocking issues. This local rule-based evaluator is designed to validate the workflow before connecting an enterprise LLM.</p></section>
-      </aside>
-    </div>
-  </main>
-
-  <div id="logsModal" class="modal" hidden>
-    <div class="modal-overlay" id="modalOverlay"></div>
-    <div class="modal-content">
-      <button class="modal-close" id="closeModal" type="button" aria-label="Close modal">×</button>
-      <h2>Logs Required for Windows Systems</h2>
-      <p>For Windows systems, logs are essential for effective troubleshooting. Please visit the <a href="https://github.com/DellProSupportGse/Tools" target="_blank" rel="noopener noreferrer">DellProSupportGse/Tools</a> repository and run the appropriate log collection tool for your issue.</p>
-      <div class="modal-actions">
-        <button class="button primary" id="openToolsLink" type="button">Open DellProSupportGse/Tools</button>
-        <button class="button secondary" id="bypassLogs" type="button">Bypass (Sev 1 or Unable to Obtain)</button>
+    <section class="tools" id="tools" aria-labelledby="tools-title">
+      <div class="section-header"><div><p class="eyebrow">YOUR TOOLKIT</p><h2 id="tools-title">The right tool. The next step.</h2><p>Purpose-built assistance for your support workflow.</p></div><span class="count">3 tools available</span></div>
+      <div class="tool-grid">
+        <a class="tool-card active" href="escalation-quality.html">
+          <div class="card-top"><span class="tool-icon"><svg viewBox="0 0 32 32" aria-hidden="true" fill="currentColor"><path d="M12 4h8v8h8v8h-8v8h-8v-8H4v-8h8z"/></svg></span><span class="badge">Available</span></div>
+          <p class="category">ESCALATION READINESS</p><h3>DE Escalation Request</h3><p>Review your escalation before the handoff. Check for missing details, assess readiness, and give senior technicians the context they need.</p>
+          <div class="tags"><span>Readiness score</span><span>Actionable feedback</span></div><div class="card-action">Launch tool <span aria-hidden="true">↗</span></div>
+        </a>
+        <a class="tool-card active" href="case-notes.html">
+          <div class="card-top"><span class="tool-icon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="7" y="5" width="18" height="24" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 4h8v5h-8zM11 18l3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span class="badge">Available</span></div>
+          <p class="category">CASE DOCUMENTATION</p><h3>Case Notes</h3><p>Capture your investigation and next steps. Keep your last 100 cases, track time, and copy a complete note into Lightning.</p>
+          <div class="tags"><span>Automatic saving</span><span>Time tracking</span></div><div class="card-action">Launch tool <span aria-hidden="true">↗</span></div>
+        </a>
+        <a class="tool-card active" href="https://github.com/DellProSupportGse/Tools" target="_blank" rel="noopener noreferrer">
+          <div class="card-top"><span class="tool-icon" aria-hidden="true">↗</span><span class="badge">External resource</span></div>
+          <p class="category">MICROSOFT SUPPORT</p><h3>Microsoft Support Tools</h3><p>Open the DellProSupportGse tools repository on GitHub to access Microsoft support tools.</p>
+          <div class="tags"><span>GitHub repository</span><span>Opens in a new tab</span></div><div class="card-action">Open support tools <span aria-hidden="true">↗</span></div>
+        </a>
       </div>
-    </div>
-  </div>
+    </section>
+    <section class="workflow" aria-label="Support workflow"><p>Better preparation.<br><strong>Stronger support.</strong></p><div><span>01</span><h3>Choose your tool</h3><p>Start with the task at hand.</p></div><div><span>02</span><h3>Build the context</h3><p>Bring the details that matter.</p></div><div><span>03</span><h3>Move forward</h3><p>Put clear, actionable feedback to work.</p></div></section>
+  </main>
+  <footer><span>Dell Pro-Support · Technical Support Assistant</span><span>Designed to support your expertise.</span></footer>
 </body>
 </html>
