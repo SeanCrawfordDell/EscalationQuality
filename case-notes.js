@@ -285,6 +285,15 @@
   });
   setInterval(() => { if (dirty) save(); }, 10000);
   setInterval(tick, 1000);
+  function updateFloatingActions() {
+    const actions = $("copyActions");
+    if (!actions?.getBoundingClientRect) return;
+    const rect = actions.getBoundingClientRect();
+    actions.classList.toggle("is-floating", window.scrollY > 0 && Math.abs(rect.bottom - (window.innerHeight - 16)) < 3);
+  }
+  window.addEventListener("scroll", updateFloatingActions, { passive:true });
+  window.addEventListener("resize", updateFloatingActions);
+  updateFloatingActions();
   document.addEventListener("visibilitychange", () => { if (document.hidden) save(); });
   window.addEventListener("beforeunload", event => {
     save();

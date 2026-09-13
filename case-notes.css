@@ -34,6 +34,7 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
   background:var(--panel-bg);
   box-shadow:0 10px 28px rgba(15,31,56,.16);
 }
+.copy-actions.is-floating { background:transparent; box-shadow:none; }
 .copy-actions p { color:var(--muted); font-size:12px; line-height:1.6; margin:0; }
 .copy-actions button { flex-shrink:0; }
 #welcome { text-align:center; padding:85px 20px; color:var(--muted); }
