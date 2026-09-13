@@ -11,6 +11,7 @@ window.CaseToolkit = (() => {
   }
   function refreshChecklist() {
     const note=api?.current();if(!note)return;
+    if(!$("logChecklist"))return;
     const data=core.ensure(note);
     $("templatePreview").textContent=core.templates[data.issueType].prompts.join(" · ");
     $("logChecklistIntro").textContent=note.os ? `Suggested evidence for ${note.os} · ${core.templates[data.issueType].name}.` : "Select OS/Solution above for product-specific collection guidance.";
@@ -76,7 +77,7 @@ window.CaseToolkit = (() => {
       });
       api.refreshEditors();notify("Template appended. Replace the bracketed prompts with case details.");
     });
-    for(const [id,key,build] of [["generateCustomer","customerDraft",note=>core.customerUpdate(note,CaseNotes.plainText)],["generateSummary","summaryDraft",note=>core.summary(note,CaseNotes.plainText,CaseNotes.duration(CaseNotes.elapsed(note,Date.now())))]] ) {
+    for(const [id,key,build] of [["generateCustomer","customerDraft",note=>core.customerUpdate(note,CaseNotes.plainText,$("customerTone").value)],["generateSummary","summaryDraft",note=>core.summary(note,CaseNotes.plainText,CaseNotes.duration(CaseNotes.elapsed(note,Date.now())))]] ) {
       $(id).addEventListener("click",()=>{
         const note=api.current();if(!note || !api.canEdit())return;
         if(core.ensure(note)[key] && !confirm("Replace the existing draft with an updated draft from this case?"))return;

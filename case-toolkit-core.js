@@ -53,11 +53,13 @@ const CaseToolkitCore = (() => {
     if(checked.length)sections.push("Evidence checklist completed:\n"+checked.map(item=>"- "+item.text).join("\n"));
     return sections.join("\n\n");
   }
-  function customerUpdate(note, plain) {
+  function customerUpdate(note, plain, tone="clear") {
     const data=ensure(note);
     const customerText = value => plain(value).replace(/\[Screenshot:[^\]]*\]/g, "").trim();
     const actions=customerText(note.notes) || "[Add a customer-facing description of the work completed]";
-    return `Hello,\n\nHere is an update on Service Request ${note.request || "[number]"}.\n\nIssue we are investigating:\n${note.issue || "[Describe the issue]"}\n\nProgress so far:\n${actions}\n\nNext steps:\n${customerText(note.next) || "[Add the next action]"}\n\n${data.due ? "Next follow-up: "+new Date(data.due).toLocaleString() : "Next follow-up: [Confirm date and time]"}\n\nPlease let us know if the symptoms or business impact change.\n\nThank you.`;
+    const opening=tone==="reassuring" ? "We understand the impact this is having and are continuing to investigate." : tone==="concise" ? "Here is the current status." : "Here is an update on your support request.";
+    const closing=tone==="reassuring" ? "Please let us know if the symptoms or business impact change. We will keep you informed." : "Please let us know if the symptoms or business impact change.";
+    return `Hello,\n\n${opening}\n\nService Request: ${note.request || "[number]"}\n\nIssue we are investigating:\n${note.issue || "[Describe the issue]"}\n\nProgress so far:\n${actions}\n\nNext steps:\n${customerText(note.next) || "[Add the next action]"}\n\n${data.due ? "Next follow-up: "+new Date(data.due).toLocaleString() : "Next follow-up: [Confirm date and time]"}\n\n${closing}\n\nThank you.`;
   }
   function concise(text, limit = 900) {
     const lines=text.split("\n").filter(line=>line.trim());

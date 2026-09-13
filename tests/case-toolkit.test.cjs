@@ -28,6 +28,7 @@ test('drafts use supplied facts and missing information remains explicit',()=>{
  const update=T.customerUpdate(note,C.plainText);assert.ok(update.includes('00123'));assert.ok(update.includes('Restarted service'));assert.ok(update.includes('[Confirm date and time]'));
  const summary=T.summary(note,C.plainText,'00:01:00');assert.ok(summary.includes('One administrator blocked'));assert.ok(summary.includes('Does the issue recur'));assert.ok(summary.includes('Not assigned'));
  assert.ok(!C.copyText(note,3000).includes('Troubleshooting timeline:'));assert.ok(!C.escalation(note,3000).sourceNote.includes('Timeout returned'));
+ assert.ok(!T.summary(note,C.plainText,'00:01:00').includes('Troubleshooting timeline:'));
 });
 test('templates provide prompts for each case category without claiming completed actions',()=>{
  for(const key of Object.keys(T.templates)){assert.ok(T.templateHtml(key).includes('[Add details]'));assert.ok(T.templates[key].prompts.length>=6);}
