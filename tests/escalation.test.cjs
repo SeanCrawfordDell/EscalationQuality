@@ -18,7 +18,7 @@ function harness({stored=null,failStorage=false,failClipboard=false,imported=nul
  for(const [,tag,id]of html.matchAll(/<(\w+)[^>]*\bid="([^"]+)"/g))get(id).tagName=tag.toUpperCase();
  get('reviewState').hidden=true;
  const storage={getItem(){if(failStorage)throw Error('blocked');return stored},setItem(k,v){if(failStorage)throw Error('quota');stored=v;writes++}};
- const ctx=vm.createContext({document:{getElementById:get,createElement:t=>new Element(t),createTextNode:t=>t,querySelectorAll:()=>[],addEventListener:(k,f)=>listeners[k]=f},localStorage:storage,sessionStorage:{getItem:()=>imported&&JSON.stringify(imported),removeItem(){imported=null}},location:{hash:imported?'#import=test':'',pathname:'/escalation-quality.html',search:''},history:{replaceState(){}},window:{addEventListener:(k,f)=>listeners[k]=f},setInterval:(f,ms)=>timers.push({f,ms}),confirm:()=>confirmAnswer,navigator:{clipboard:{async writeText(text){if(failClipboard)throw Error('denied');copied=text}}},URLSearchParams,console,CaseToolkitCore:require('../case-toolkit-core.js')});
+ const ctx=vm.createContext({document:{getElementById:get,createElement:t=>new Element(t),createTextNode:t=>t,querySelectorAll:()=>[],addEventListener:(k,f)=>listeners[k]=f},localStorage:storage,sessionStorage:{getItem:()=>imported&&JSON.stringify(imported),removeItem(){imported=null}},location:{hash:imported?'#import=test':'',pathname:'/escalation-quality.html',search:''},history:{replaceState(){}},window:{addEventListener:(k,f)=>listeners[k]=f},setInterval:(f,ms)=>timers.push({f,ms}),confirm:()=>confirmAnswer,navigator:{clipboard:{async writeText(text){if(failClipboard)throw Error('denied');copied=text}}},URLSearchParams,console,CaseToolkitCore:require('../case-toolkit-core.js'),DevinPrompt:require('../devin-prompt-core.js')});
  vm.runInContext(fs.readFileSync(require.resolve('../app.js'),'utf8'),ctx);
  return {get,ctx,run:s=>vm.runInContext(s,ctx),async click(id){for(const f of get(id).listeners.click||[])await f()},stored:()=>stored,copied:()=>copied,timers,listeners,setFail:v=>failStorage=v,setConfirm:v=>confirmAnswer=v,writes:()=>writes,externalSave:value=>stored=value};
 }
@@ -40,6 +40,10 @@ test('edits invalidate review; copy requires a fresh review and reports clipboar
  h.get('problem').value='Changed';h.run('markChanged()');assert.equal(h.get('copyButton').disabled,true);assert.match(h.get('resultTitle').textContent,/review again/);
  await h.click('copyButton');assert.match(h.get('copyStatus').textContent,/Review/);
  const f=harness({failClipboard:true});await f.click('loadStrong');await f.click('copyButton');assert.match(f.get('copyStatus').textContent,/Copy failed/);assert.equal(f.get('copyPreview').selected,true);
+});
+test('Copy to Devin includes current escalation facts and its selected task',async()=>{
+ const h=harness();await h.click('loadStrong');h.get('devinTask').value='logs';await h.click('copyDevin');
+ assert.match(h.copied(),/Task: Recommend logs to collect/);assert.match(h.copied(),/SERVICE REQUEST NUMBER:\n123456789/);assert.match(h.get('devinStatus').textContent,/Copied for Devin/);
 });
 test('samples and clear protect typed drafts even before first review',async()=>{
  const h=harness();h.get('problem').value='Original work';h.setConfirm(false);await h.click('loadStrong');await h.click('clearForm');assert.equal(h.get('problem').value,'Original work');

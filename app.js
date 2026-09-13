@@ -252,6 +252,16 @@ byId("copyButton").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(text); byId("copyStatus").textContent = "Escalation copied."; saveDraft(); }
   catch { byId("copyStatus").textContent = "Copy failed. Retry or select and copy the preview manually."; byId("copyPreview").focus(); byId("copyPreview").select(); }
 });
+byId("copyDevin").addEventListener("click", async () => {
+  const text = DevinPrompt.build(byId("devinTask").value, "Domain Engineer Escalation Request", formatEscalation(reviewData()));
+  try {
+    await navigator.clipboard.writeText(text);
+    byId("devinStatus").textContent = "Copied for Devin. Paste the prompt into Devin Desktop or CLI, then review its suggestions before applying them.";
+    saveDraft();
+  } catch {
+    byId("devinStatus").textContent = "Could not copy the Devin prompt. Allow clipboard access and try again.";
+  }
+});
 setInterval(saveDraft, 10000);
 document.addEventListener("visibilitychange", () => { if (document.hidden) saveDraft(); });
 window.addEventListener("pagehide", saveDraft);

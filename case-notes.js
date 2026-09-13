@@ -109,7 +109,8 @@
     $("restoreHistory").disabled = !writable || copying;
     $("fields").disabled = !writable || copying;
     $("newNote").disabled = $("startNote").disabled = !writable || copying;
-    $("emailNote").disabled = $("copyNote").disabled = $("escalateNote").disabled = !writable || copying;
+    $("emailNote").disabled = $("copyNote").disabled = $("escalateNote").disabled = $("copyDevin").disabled = !writable || copying;
+    $("devinTask").disabled = !writable || copying;
     $("stopTimer").disabled = !writable || copying || !selected() || selected().started === null;
     window.CaseMarkdown?.setEditable(writable && !copying);
     window.CaseToolkit?.setEditable(writable && !copying);
@@ -269,6 +270,18 @@
     } catch {
       $("copyStatus").textContent = "Could not copy. Timer was not stopped. Allow clipboard access and try Copy to Lightning again.";
     } finally { copying = false; controls(); history(); tick(); }
+  });
+  $("copyDevin").addEventListener("click", async () => {
+    const note = selected(); if (!note || !writable || copying) return;
+    save();
+    const text = DevinPrompt.build($("devinTask").value, "Case Notes", CaseNotes.copyText(note, Date.now()));
+    copying = true; controls(); history();
+    try {
+      await navigator.clipboard.writeText(text);
+      $("devinStatus").textContent = "Copied for Devin. Open Devin Desktop or CLI, paste the prompt, and review its suggestions before applying them.";
+    } catch {
+      $("devinStatus").textContent = "Could not copy the Devin prompt. Allow clipboard access and try again.";
+    } finally { copying = false; controls(); history(); }
   });
   setInterval(() => { if (dirty) save(); }, 10000);
   setInterval(tick, 1000);

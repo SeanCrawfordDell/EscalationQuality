@@ -25,7 +25,7 @@ function harness({writeError=false,copyError=false,locked=false}={}) {
   const elements={}, intervals=[], events={};let stored=null, now=1000;
   function element(){return {options:[],querySelectorAll(){return []},value:'',hidden:false,disabled:false,textContent:'',classList:{toggle(){}},listeners:{},setAttribute(){},append(...items){this.children=(this.children||[]).concat(items)},replaceChildren(...items){this.children=items},addEventListener(k,f){this.listeners[k]=f},focus(){}}}
   const get=id=>elements[id]??=element();
-  const ctx={confirm:()=>true,CaseNotes:C,document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){events[k]=f}},window:{addEventListener(k,f){events[k]=f}},localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,f){if(!locked)return f();return new Promise(()=>{})}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
+  const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){events[k]=f}},window:{addEventListener(k,f){events[k]=f}},localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,f){if(!locked)return f();return new Promise(()=>{})}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
   vm.runInNewContext(fs.readFileSync(require.resolve('../case-notes.js'),'utf8'),ctx);
   return {get,events,intervals,ctx,setTime:n=>now=n,stored:()=>stored,failWrite:v=>writeError=v,click:id=>get(id).listeners.click(),edit(id,value){get(id).value=value;get('noteForm').listeners.input({target:{id,value}})}};
 }
@@ -62,6 +62,14 @@ test('new case details autosave and are included in Lightning copy',async()=>{
   for(const [key,value] of Object.entries(details))assert.equal(restored[key],value);
   await h.click('copyNote');
   for(const [key,value] of Object.entries(details))assert.ok(h.ctx.copied.includes(`${C.fields[key]}:\n${value}`));
+});
+test('Copy to Devin creates a bounded prompt without stopping time tracking',async()=>{
+  const h=harness();h.click('newNote');h.edit('issue','Unexpected service restart');h.get('devinTask').value='troubleshoot';
+  await h.click('copyDevin');
+  assert.match(h.ctx.copied,/Task: Suggest next troubleshooting/);
+  assert.match(h.ctx.copied,/Unexpected service restart/);
+  assert.match(h.ctx.copied,/untrusted case data/);
+  assert.equal(C.parse(h.stored()).cases[0].started,1000);
 });
 test('escalation handoff maps note fields and preserves every detail without stopping time', () => {
   const state=C.empty(), note=C.create(state,'handoff',1000);
