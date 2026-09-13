@@ -72,6 +72,9 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 #emailNote { background:#067647; border-color:#067647; color:#fff; }
 #emailNote:hover:not(:disabled) { background:#055e39; border-color:#055e39; }
 
+#copyDevin { background:#6d28d9; border-color:#6d28d9; color:#fff; }
+#copyDevin:hover:not(:disabled) { background:#5b21b6; border-color:#5b21b6; }
+
 #toggleHistory { margin:0 0 16px; }
 .notes-layout.history-collapsed { grid-template-columns:minmax(0,1fr); }
 
