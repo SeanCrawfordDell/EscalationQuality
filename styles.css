@@ -114,7 +114,7 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#111c2f; color:#d
 .action-row { display:grid; grid-template-columns:1fr 1fr auto; align-items:start; gap:12px; padding-block:14px; border-bottom:1px solid var(--line); }
 #addAction { margin-top:16px; }
 #copyPreview { min-height:320px; font-family:inherit; }
-.devin-copy { border-top:1px solid var(--line); margin-top:18px; padding-top:16px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:12px; }
+.devin-copy { border-top:1px solid var(--line); margin-top:18px; padding-top:16px; display:grid; grid-template-columns:minmax(0,1fr); gap:12px; }
 .devin-copy p { grid-column:1 / -1; margin:0; color:var(--muted); font-size:12px; line-height:1.45; }
 @media(max-width:650px) { .devin-copy { grid-template-columns:1fr; } }
 button:disabled { opacity:.55; cursor:not-allowed; }
