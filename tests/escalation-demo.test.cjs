@@ -8,7 +8,7 @@ function run(seen=false,blocked=false){
 }
 test('first visit opens demo; navigation reaches live scores and completion persists dismissal',()=>{
  const h=run();assert.equal(h.get('featureDemo').open,true);assert.equal(h.get('demoBack').disabled,true);
- for(let i=0;i<4;i++)h.click('demoNext');
+ for(let i=0;i<6;i++)h.click('demoNext');
  assert.match(h.get('demoExample').textContent,/95\/100/);h.click('demoNext');h.click('demoNext');
  assert.equal(h.get('featureDemo').open,false);assert.equal(h.writes(),1);assert.equal(h.get('showDemo').focused,true);
 });
@@ -19,4 +19,13 @@ test('return visit stays closed, replay works, and skip or Escape dismisses',()=
 });
 test('unavailable storage does not block skipping the demo',()=>{
  const h=run(false,true);h.click('skipDemo');assert.equal(h.get('featureDemo').open,false);
+});
+
+test('tour explains helper location, scenario choices, and plan actions',()=>{
+ const h=run();for(let i=0;i<4;i++)h.click('demoNext');
+ assert.match(h.get('demoDescription').textContent,/beside Have you Gathered Logs/);
+ assert.match(h.get('demoDescription').textContent,/What is happening/);
+ h.click('demoNext');assert.match(h.get('demoDescription').textContent,/Add to Next Steps/);
+ assert.match(h.get('demoExample').textContent,/does not collect logs/);
+ h.click('demoBack');assert.equal(h.get('demoTitle').textContent,'Choose the right logs for the issue');
 });

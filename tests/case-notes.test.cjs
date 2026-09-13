@@ -67,7 +67,7 @@ test('escalation handoff maps note fields and preserves every detail without sto
   const state=C.empty(), note=C.create(state,'handoff',1000);
   Object.assign(note,{tag:'TEST123',request:'000123',os:'Ubuntu',country:'US',supportType:'OEM',logLocation:'https://example.com/log',issue:'Issue details',notes:'Investigation\nResults',next:'Review diagnostics'});
   const payload=C.escalation(note,11000);
-  assert.equal(payload.problem,note.issue);assert.equal(payload.troubleshooting,note.notes);assert.equal(payload.request,note.next);
+  assert.equal(payload.problem,note.issue);assert.equal(payload.troubleshooting,note.notes);assert.equal(payload.nextSteps,note.next);
   for(const field of ['tag','os','country'])assert.equal(payload[field],note[field]);
   for(const value of Object.values(C.fields).map((label)=>label+':\n'))assert.ok(payload.sourceNote.includes(value));
   assert.ok(payload.sourceNote.includes('000123'));assert.ok(payload.sourceNote.includes('https://example.com/log'));assert.ok(payload.sourceNote.endsWith('00:00:10'));
@@ -155,6 +155,14 @@ test('rich text copies and escalates as readable plain text while backup preserv
   const text=C.copyText(note,2000);
   assert.ok(text.includes('Failure & recovery'));assert.ok(text.includes('- Collect logs'));
   assert.ok(text.includes('[Screenshot: Error screenshot; view in Case Notes]'));assert.ok(!text.includes('<p>'));
-  assert.equal(C.escalation(note,2000).request,'Contact customer');
+  assert.equal(C.escalation(note,2000).nextSteps,'Contact customer');
   assert.equal(C.parse(C.backup(state,2000)).cases[0].notes,note.notes);
+});
+
+test('OS version/build survives backup, exports, handoff, and legacy history migration',()=>{
+ const state=C.empty(),note=C.create(state,'os-build',100);note.osVersion='Windows Server 2022 build 20348';
+ const restored=C.parse(C.backup(state,200));assert.equal(restored.cases[0].osVersion,note.osVersion);
+ assert.match(C.copyText(note,200),/OS version \/ build:\nWindows Server 2022 build 20348/);
+ assert.equal(C.escalation(note,200).osVersion,note.osVersion);
+ delete note.osVersion;assert.equal(C.parse(JSON.stringify(state)).cases[0].osVersion,'');
 });

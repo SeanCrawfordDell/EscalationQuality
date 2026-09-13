@@ -328,5 +328,17 @@
     },
     refreshEditors: () => { const note = selected(); if (!note) return; $("notes").value = note.notes; $("next").value = note.next; window.CaseMarkdown?.refresh(); }
   });
+  window.LogHelper?.init({
+    context: () => { const note=selected(); return {id:note?.id,os:note?.os,platform:note?.platform,symptom:note?.toolkit?.issueType}; },
+    canAdd: () => !!selected() && writable && !copying,
+    addLabel: "Add to Next Steps",
+    add(text) {
+      const note=selected(); if(!note || !writable || copying)return false;
+      const escaped=text.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+      note.next=marked.parse(note.next,{gfm:true,breaks:true})+"<p>"+escaped.replace(/\n/g,"<br>")+"</p>";
+      $("next").value=note.next;$("next").dispatchEvent(new Event("input",{bubbles:true}));
+      window.CaseMarkdown?.refresh();return save();
+    }
+  });
   acquire();
 })();

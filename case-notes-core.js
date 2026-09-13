@@ -2,7 +2,7 @@
 // Pure case operations, shared with the Node regression tests.
 const CaseNotes = (() => {
   const Toolkit = typeof module !== "undefined" ? require("./case-toolkit-core.js") : CaseToolkitCore;
-  const fields = { tag: "Service Tag", platform: "System/Platform", request: "Service Request Number", os: "OS/Solution", country: "Customer Country", supportType: "OS Support", logLocation: "Log Location", issue: "Issue Description", notes: "Notes", next: "Action Plan / Next Steps" };
+  const fields = { tag: "Service Tag", platform: "System/Platform", request: "Service Request Number", os: "OS/Solution", osVersion: "OS version / build", country: "Customer Country", supportType: "OS Support", logLocation: "Log Location", issue: "Issue Description", notes: "Notes", next: "Action Plan / Next Steps" };
   const empty = () => ({ version: 1, selected: null, cases: [] });
   const elapsed = (note, now) => note.elapsed + (note.started === null ? 0 : Math.max(0, now - note.started));
   function stop(note, now) { note.elapsed = elapsed(note, now); note.started = null; }
@@ -74,7 +74,8 @@ const CaseNotes = (() => {
   }
   function escalation(note, now) {
     return { problem: note.issue, tag: note.tag, os: note.os, country: note.country,
-      troubleshooting: plainImages(note.notes), request: plainImages(note.next), sourceNote: copyText(note, now) };
+      osVersion: note.osVersion || "", serviceRequest: note.request, platform: note.platform || "", supportType: note.supportType || "", logLocation: note.logLocation || "", impact: note.toolkit?.impact || "", checks: note.toolkit?.checks || {}, issueType: note.toolkit?.issueType || "general",
+      troubleshooting: plainImages(note.notes), nextSteps: plainImages(note.next), sourceNote: copyText(note, now) };
   }
   function parse(raw) {
     if (raw === null) return empty();
@@ -84,7 +85,7 @@ const CaseNotes = (() => {
     for (const note of state.cases) {
       // Older saved cases predate these optional fields; retain all existing data.
       if (note && typeof note === "object") {
-        for (const key of ["os", "country", "supportType", "logLocation", "platform"]) {
+        for (const key of ["os", "country", "supportType", "logLocation", "platform", "osVersion"]) {
           if (!Object.hasOwn(note, key)) note[key] = "";
         }
       }

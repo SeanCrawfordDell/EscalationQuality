@@ -1,0 +1,151 @@
+const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
+const core=require('../case-notes-core.js');
+function harness({stored=null,failStorage=false,failClipboard=false,imported=null}={}) {
+ const nodes={}, listeners={},timers=[];let copied='',writes=0,confirmAnswer=true;
+ class Element {
+  constructor(tag='div'){this.tagName=tag.toUpperCase();this.value='';this.textContent='';this.children=[];this.listeners={};this.attributes={};this.hidden=false;this.style={};this.options=[];this.classList={add(){},remove(){},toggle(){}};}
+  append(...items){for(const item of items){if(typeof item==='object'){item.parent=this;if(item.tagName==='OPTION')this.options.push(item);}this.children.push(item)}}
+  replaceChildren(...items){this.children=[];this.append(...items)}
+  after(item){if(item.id)nodes[item.id]=item;this.parent?.append(item)}
+  remove(){if(this.id)delete nodes[this.id]}
+  addEventListener(name,fn){(this.listeners[name]??=[]).push(fn)}
+  setAttribute(k,v){this.attributes[k]=v} removeAttribute(k){delete this.attributes[k]}
+  focus(){this.focused=true} scrollIntoView(){} select(){this.selected=true}
+  querySelector(selector){return this.children.flatMap(child=>typeof child==='object'?[child,...child.children.filter(c=>typeof c==='object')]:[]).find(child=>selector==='textarea'?child.tagName==='TEXTAREA':child.className===selector.slice(1))}
+ }
+ const get=id=>nodes[id]??=Object.assign(new Element(),{id});
+ const html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
+ for(const [,tag,id]of html.matchAll(/<(\w+)[^>]*\bid="([^"]+)"/g))get(id).tagName=tag.toUpperCase();
+ get('reviewState').hidden=true;
+ const storage={getItem(){if(failStorage)throw Error('blocked');return stored},setItem(k,v){if(failStorage)throw Error('quota');stored=v;writes++}};
+ const ctx=vm.createContext({document:{getElementById:get,createElement:t=>new Element(t),createTextNode:t=>t,querySelectorAll:()=>[],addEventListener:(k,f)=>listeners[k]=f},localStorage:storage,sessionStorage:{getItem:()=>imported&&JSON.stringify(imported),removeItem(){imported=null}},location:{hash:imported?'#import=test':'',pathname:'/escalation-quality.html',search:''},history:{replaceState(){}},window:{addEventListener:(k,f)=>listeners[k]=f},setInterval:(f,ms)=>timers.push({f,ms}),confirm:()=>confirmAnswer,navigator:{clipboard:{async writeText(text){if(failClipboard)throw Error('denied');copied=text}}},URLSearchParams,console,CaseToolkitCore:require('../case-toolkit-core.js')});
+ vm.runInContext(fs.readFileSync(require.resolve('../app.js'),'utf8'),ctx);
+ return {get,ctx,run:s=>vm.runInContext(s,ctx),async click(id){for(const f of get(id).listeners.click||[])await f()},stored:()=>stored,copied:()=>copied,timers,listeners,setFail:v=>failStorage=v,setConfirm:v=>confirmAnswer=v,writes:()=>writes,externalSave:value=>stored=value};
+}
+test('valid log select earns full completeness and no-log exception needs a reason',()=>{
+ const h=harness();assert.equal(h.run('evaluate(samples.strong).categories.completeness'),35);
+ assert.equal(h.run('evaluate({...samples.strong,evidence:"No",logReason:""}).status'),'blocked');
+ assert.equal(h.run('evaluate({...samples.strong,evidence:"No",logReason:"Host unavailable during production outage"}).ready_to_escalate'),true);
+});
+test('10-second autosave restores all fields, checks and paired actions; storage failure remains dirty',()=>{
+ const h=harness();h.get('serviceRequest').value='SR-77';h.run('actions=[{action:"Restarted service",result:"Failure returned"}];renderActions();checks={incident:true};markChanged()');
+ assert.equal(h.timers[0].ms,10000);h.timers[0].f();assert.match(h.get('draftStatus').textContent,/Saved/);
+ const recovered=harness({stored:h.stored()});assert.equal(recovered.get('serviceRequest').value,'SR-77');assert.equal(recovered.run('readActions()[0].result'),'Failure returned');assert.equal(recovered.run('checks.incident'),true);
+ h.setFail(true);h.get('platform').value='R750';h.run('markChanged();saveDraft()');assert.match(h.get('draftStatus').textContent,/Save failed/);assert.equal(h.run('dirty'),true);
+ let prevented=false;h.listeners.beforeunload({preventDefault(){prevented=true}});assert.equal(prevented,true);
+ h.setFail(false);h.run('saveDraft()');assert.equal(h.run('dirty'),false);
+});
+test('edits invalidate review; copy requires a fresh review and reports clipboard failure',async()=>{
+ const h=harness();await h.click('loadStrong');assert.equal(h.get('copyButton').disabled,false);await h.click('copyButton');assert.match(h.copied(),/^SERVICE REQUEST NUMBER:\n123456789/);
+ h.get('problem').value='Changed';h.run('markChanged()');assert.equal(h.get('copyButton').disabled,true);assert.match(h.get('resultTitle').textContent,/review again/);
+ await h.click('copyButton');assert.match(h.get('copyStatus').textContent,/Review/);
+ const f=harness({failClipboard:true});await f.click('loadStrong');await f.click('copyButton');assert.match(f.get('copyStatus').textContent,/Copy failed/);assert.equal(f.get('copyPreview').selected,true);
+});
+test('samples and clear protect typed drafts even before first review',async()=>{
+ const h=harness();h.get('problem').value='Original work';h.setConfirm(false);await h.click('loadStrong');await h.click('clearForm');assert.equal(h.get('problem').value,'Original work');
+});
+test('paired rows contribute to review and copy while incomplete pairs block readiness',async()=>{
+ const h=harness();await h.click('loadStrong');h.run('actions=[{action:"Restarted the controller",result:""}];renderActions()');assert.equal(h.run('runReview().status'),'blocked');
+ h.run('actions=[{action:"Restarted the controller",result:"UI returned for twelve minutes"}];renderActions()');assert.equal(h.run('runReview().ready_to_escalate'),true);assert.match(h.get('copyPreview').value,/UI returned for twelve minutes/);
+});
+test('Notes handoff imports structured metadata and replaces old paired rows before saving',()=>{
+ const note={...core.create(core.empty(),'n',100),request:'SR-555',platform:'R750',supportType:'PSP',logLocation:'Case attachment',toolkit:{impact:'Production degraded',checks:{incident:true},issueType:'network'}};
+ const incoming=core.escalation(note,100), h=harness({imported:incoming});
+ assert.equal(h.get('serviceRequest').value,'SR-555');assert.equal(h.get('platform').value,'R750');assert.equal(h.get('impact').value,'Production degraded');assert.equal(h.run('checks.incident'),true);
+ const saved=JSON.parse(h.stored());saved.actions=[{action:'Old',result:'Old'}];
+ const replaced=harness({stored:JSON.stringify(saved),imported:incoming});assert.equal(JSON.parse(replaced.stored()).actions.length,0);
+});
+
+test('another tab cannot silently overwrite a newer draft',()=>{
+ const h=harness();h.get('problem').value='Local edits';h.run('markChanged()');
+ h.externalSave('newer draft from other tab');assert.equal(h.run('saveDraft()'),false);assert.match(h.get('draftStatus').textContent,/Save paused/);assert.equal(h.stored(),'newer draft from other tab');
+});
+
+test('log reason appears only for No, including restored drafts, and is omitted from Yes copies',()=>{
+ const h=harness();assert.equal(h.get('logReasonField').hidden,true);
+ h.run('populate({evidence:"No",logReason:"Host unavailable"})');assert.equal(h.get('logReasonField').hidden,false);
+ h.run('markChanged();saveDraft()');const restored=harness({stored:h.stored()});assert.equal(restored.get('logReasonField').hidden,false);
+ h.get('evidence').value='Yes';h.run('updateLogReasonVisibility()');assert.equal(h.get('logReasonField').hidden,true);assert.doesNotMatch(h.run('formatEscalation(reviewData())'),/Host unavailable/);
+ h.get('evidence').value='';h.run('updateLogReasonVisibility()');assert.equal(h.get('logReasonField').hidden,true);
+});
+
+test('senior assistance is excluded from scoring and export; total remains 100',()=>{
+ const h=harness();assert.equal(h.run('evaluate(samples.strong).score'),100);
+ assert.equal(h.run('required.includes("request")'),false);
+ assert.equal(h.run('Object.hasOwn(evaluate(samples.strong).categories,"clear_request")'),false);
+ assert.doesNotMatch(h.run('formatEscalation({...samples.strong,request:"Old assistance text"})'),/Old assistance text|REQUESTED SENIOR/);
+});
+
+test('every Case Notes field reaches its corresponding escalation input and survives reload',()=>{
+ const note=core.create(core.empty(),'mapped',100);
+ Object.assign(note,{tag:'TAG1234',platform:'PowerEdge R750',request:'000456',os:'Ubuntu',country:'GB',supportType:'PSP',logLocation:'https://example.com/logs',issue:'Application timeout',notes:'<p>Restarted service</p><p>Timeout persisted</p>',next:'<p>Collect service diagnostics</p>'});
+ note.toolkit.impact='Two users affected';
+ const h=harness({imported:core.escalation(note,200)});
+ const expected={tag:note.tag,platform:note.platform,serviceRequest:note.request,os:note.os,country:note.country,supportType:note.supportType,logLocation:note.logLocation,problem:note.issue,troubleshooting:core.plainText(note.notes),impact:note.toolkit.impact};
+ const restored=harness({stored:h.stored()});
+ for(const [id,value] of Object.entries(expected)){assert.equal(h.get(id).value,value,id);assert.equal(restored.get(id).value,value,id+' restored');}
+ assert.equal(h.get('evidence').value,'');assert.equal(h.get('results').value,'');
+ assert.ok(h.get('sourceNote').value.includes(core.plainText(note.next)));
+ assert.equal(h.run('fieldIds.includes("nextSteps")'),false);
+});
+
+
+test('Service Tag is optional and does not reduce completeness or block readiness',()=>{
+ const h=harness();const result=h.run('evaluate({...samples.strong,tag:""})');
+ assert.equal(result.ready_to_escalate,true);assert.equal(result.categories.completeness,35);
+ assert.ok(!result.blocking_issues.some(item=>item.field==='tag'));
+});
+
+test('OS Support is required and every available selection receives full completeness credit',()=>{
+ const h=harness();const missing=h.run('evaluate({...samples.strong,supportType:""})');
+ assert.equal(missing.ready_to_escalate,false);assert.ok(missing.blocking_issues.some(item=>item.field==='supportType'));
+ assert.ok(missing.categories.completeness<35);
+ for(const supportType of ['OEM','PSP','No OS Support']){
+  const result=h.run('evaluate({...samples.strong,supportType:'+JSON.stringify(supportType)+'})');
+  assert.equal(result.categories.completeness,35);assert.equal(result.ready_to_escalate,true);
+ }
+});
+
+test('Action Plan / Next Steps has no standalone escalation field or copy section',()=>{
+ const h=harness();assert.equal(h.run('fieldIds.includes("nextSteps")'),false);
+ assert.doesNotMatch(h.run('formatEscalation({...samples.strong,nextSteps:"Pending action"})'),/Pending action|ACTION PLAN/);
+});
+
+test('OS version/build is required; concise versions receive completeness credit',()=>{
+ const h=harness();const missing=h.run('evaluate({...samples.strong,osVersion:""})');
+ assert.equal(missing.ready_to_escalate,false);assert.ok(missing.blocking_issues.some(item=>item.field==='osVersion'));
+ assert.ok(missing.categories.completeness<35);
+ const filled=h.run('evaluate({...samples.strong,osVersion:"8.0 U3"})');
+ assert.equal(filled.ready_to_escalate,true);assert.equal(filled.categories.completeness,35);
+});
+test('scoring requirements exactly match current visible Required labels',()=>{
+ const h=harness(),html=fs.readFileSync(require.resolve('../escalation-quality.html'),'utf8');
+ const marked=[...html.matchAll(/<label\b[^>]*>(?:(?!<\/label>)[\s\S])*?<b>Required<\/b><(?:input|select|textarea) id="([^"]+)"/g)].map(m=>m[1]).sort();
+ assert.deepEqual(Array.from(h.run('required')).sort(),marked);
+ for(const field of h.run('required')){
+  const result=h.run('evaluate({...samples.strong,['+JSON.stringify(field)+']:""})');
+  assert.equal(result.ready_to_escalate,false,field);assert.ok(result.blocking_issues.some(i=>i.field===field),field);
+ }
+});
+test('readiness boundary is 75 and blockers override any score',()=>{
+ const h=harness();assert.equal(h.run('readiness(74,[]).ready_to_escalate'),false);assert.equal(h.run('readiness(75,[]).ready_to_escalate'),true);assert.equal(h.run('readiness(100,[{}]).status'),'blocked');
+ assert.equal(h.run('Object.values(scoreMaxima).reduce((a,b)=>a+b,0)'),100);
+});
+test('empty and older partial inputs are safe; placeholders and invalid support choices block',()=>{
+ const h=harness();assert.equal(h.run('evaluate({}).score'),0);assert.equal(h.run('evaluate({}).status'),'blocked');
+ for(const value of ['','   ','Unknown','[Add version]'])assert.equal(h.run('evaluate({...samples.strong,osVersion:'+JSON.stringify(value)+'}).ready_to_escalate'),false);
+ assert.equal(h.run('evaluate({...samples.strong,supportType:"Other"}).ready_to_escalate'),false);
+ assert.equal(h.run('evaluate({...samples.strong,evidence:"No",logReason:"Unknown"}).ready_to_escalate'),false);
+});
+test('optional, removed fields and helper plans do not inflate or penalize readiness',()=>{
+ const h=harness();const base=h.run('evaluate(samples.strong)');
+ assert.equal(h.run('evaluate({...samples.strong,tag:"",request:"",workaround:"",deadline:"",nextSteps:""}).score'),base.score);
+ assert.equal(h.run('evaluate({...samples.strong,collectionPlan:"Collect every log",checks:{incident:true}}).categories.evidence'),base.categories.evidence);
+ assert.equal(h.run('evaluate({...samples.strong,logLocation:""}).categories.evidence'),base.categories.evidence-2);
+ assert.equal(h.run('evaluate({...samples.strong,expected:"Dashboard loads"}).categories.completeness'),35);
+});
+test('incomplete action pairs receive no fabricated outcome credit or overall ready praise',async()=>{
+ const h=harness();await h.click('loadStrong');h.get('results').value='';h.run('actions=[{action:"Restarted controller",result:""}];renderActions()');
+ const result=h.run('runReview()');assert.equal(result.ready_to_escalate,false);assert.ok(!result.strengths.some(item=>item.field==='overall'));
+ assert.equal(h.run('reviewData().results'),'');assert.doesNotMatch(h.get('copyPreview').value,/\[Result missing\]/);
+});

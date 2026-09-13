@@ -106,3 +106,16 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#111c2f; color:#d
 @media (max-width:650px) { main { padding:24px 14px 45px; } .topbar { padding:0 14px; } .privacy { display:none; } .hero { display:block; } .hero-actions { margin-top:18px; flex-wrap:wrap; } .field-grid { grid-template-columns:1fr; } .field.wide { grid-column:auto; } .panel { padding:18px; } .score-ring { width:78px; height:78px; } }
 .home-link { color:inherit; text-decoration:none; }
 .home-link:focus-visible { outline:3px solid #4a9eff; outline-offset:5px; }
+/* Escalation drafts, actionable feedback, and paired investigation rows. */
+#draftStatus { color:var(--muted); margin:0 0 16px; }
+.feedback-link { border:0; background:transparent; color:inherit; text-align:left; text-decoration:underline; cursor:pointer; font:inherit; font-weight:700; padding:0; }
+.inline-feedback { color:var(--red); line-height:1.5; }
+[aria-invalid="true"] { border-color:var(--red); }
+.action-row { display:grid; grid-template-columns:1fr 1fr auto; align-items:start; gap:12px; padding-block:14px; border-bottom:1px solid var(--line); }
+#addAction { margin-top:16px; }
+#copyPreview { min-height:320px; font-family:inherit; }
+button:disabled { opacity:.55; cursor:not-allowed; }
+button:focus-visible, a:focus-visible { outline:3px solid #4a9eff; outline-offset:3px; }
+@media(max-width:650px) { .action-row { grid-template-columns:1fr; } }
+
+#logReasonField[hidden] { display:none; }
