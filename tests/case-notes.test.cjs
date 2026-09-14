@@ -63,7 +63,7 @@ test('new case details autosave and are included in Lightning copy',async()=>{
   await h.click('copyNote');
   for(const [key,value] of Object.entries(details))assert.ok(h.ctx.copied.includes(`${C.fields[key]}:\n${value}`));
 });
-test('Copy to Devin creates a bounded prompt without stopping time tracking',async()=>{
+test('Copy to AI creates a bounded prompt without stopping time tracking',async()=>{
   const h=harness();h.click('newNote');h.edit('issue','Unexpected service restart');h.get('devinTask').value='troubleshoot';
   await h.click('copyDevin');
   assert.match(h.ctx.copied,/Task: Suggest next troubleshooting/);

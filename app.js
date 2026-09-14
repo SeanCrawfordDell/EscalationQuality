@@ -256,10 +256,10 @@ byId("copyDevin").addEventListener("click", async () => {
   const text = DevinPrompt.build(byId("devinTask").value, "Domain Engineer Escalation Request", formatEscalation(reviewData()));
   try {
     await navigator.clipboard.writeText(text);
-    byId("devinStatus").textContent = "Copied for Devin. Paste the prompt into Devin Desktop or CLI, then review its suggestions before applying them.";
+    byId("devinStatus").textContent = "Copied for AI. Paste the prompt into your AI tool, then review its suggestions before applying them.";
     saveDraft();
   } catch {
-    byId("devinStatus").textContent = "Could not copy the Devin prompt. Allow clipboard access and try again.";
+    byId("devinStatus").textContent = "Could not copy the AI prompt. Allow clipboard access and try again.";
   }
 });
 setInterval(saveDraft, 10000);

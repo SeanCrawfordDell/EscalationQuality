@@ -1,6 +1,6 @@
 "use strict";
-// Builds portable prompts for an already authenticated Devin Desktop or CLI session.
-// No case data leaves the browser until the user pastes the copied prompt into Devin.
+// Builds portable prompts for AI tools.
+// No case data leaves the browser until the user pastes the copied prompt into their AI tool.
 const DevinPrompt = (() => {
   const tasks = {
     review: {

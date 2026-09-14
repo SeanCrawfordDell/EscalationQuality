@@ -469,9 +469,9 @@
     copying = true; controls(); history();
     try {
       await navigator.clipboard.writeText(text);
-      $("devinStatus").textContent = "Copied for Devin. Open Devin Desktop or CLI, paste the prompt, and review its suggestions before applying them.";
+      $("devinStatus").textContent = "Copied for AI. Open your AI tool, paste the prompt, and review its suggestions before applying them.";
     } catch {
-      $("devinStatus").textContent = "Could not copy the Devin prompt. Allow clipboard access and try again.";
+      $("devinStatus").textContent = "Could not copy the AI prompt. Allow clipboard access and try again.";
     } finally { copying = false; controls(); history(); }
   });
   setInterval(() => { if (dirty) save(); }, 10000);
