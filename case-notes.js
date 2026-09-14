@@ -126,35 +126,65 @@
     $("welcome").hidden = !!note; $("noteEditor").hidden = !note;
     if (note) {
       const effectiveFields = CaseNotes.getEffectiveFields(state);
-      effectiveFields.forEach(({ id, label }) => {
-        let input = $(id);
-        if (!input && state.fieldConfig.customFields[id]) {
-          // Create input for custom field
-          input = document.createElement("input");
-          input.id = id;
-          input.type = "text";
-          input.className = "field";
-          input.placeholder = label;
-          input.autocomplete = "off";
-          // Insert before the rich text fields
-          const notesField = $("notesLabel")?.closest(".field") || $("notes");
-          if (notesField) {
-            notesField.parentNode.insertBefore(input, notesField);
-          }
+      const fieldGrid = $("fields").querySelector(".field-grid");
+      
+      // Create a map of field IDs to their container elements for reordable fields
+      const fieldContainers = new Map();
+      const otherElements = []; // Elements that shouldn't be reordered (rich text fields, etc.)
+      
+      Array.from(fieldGrid.children).forEach(child => {
+        const input = child.querySelector('[id]');
+        if (input && effectiveFields.some(f => f.id === input.id)) {
+          fieldContainers.set(input.id, child);
+        } else {
+          otherElements.push(child);
         }
-        if (input) {
+      });
+      
+      // Create custom field containers if they don't exist
+      effectiveFields.forEach(({ id, label }) => {
+        if (!fieldContainers.has(id) && state.fieldConfig.customFields[id]) {
+          const fieldContainer = document.createElement("label");
+          fieldContainer.className = "field";
+          fieldContainer.innerHTML = `<input id="${id}" type="text" placeholder="${label}" autocomplete="off">`;
+          fieldContainers.set(id, fieldContainer);
+        }
+      });
+      
+      // Clear the grid and rebuild it in the correct order
+      fieldGrid.innerHTML = '';
+      
+      // Add fields in the configured order
+      effectiveFields.forEach(({ id }) => {
+        const fieldContainer = fieldContainers.get(id);
+        if (fieldContainer) {
+          fieldGrid.appendChild(fieldContainer);
+        }
+      });
+      
+      // Add back the other elements (rich text fields, etc.) at the end
+      otherElements.forEach(element => {
+        fieldGrid.appendChild(element);
+      });
+      
+      // Now populate values
+      effectiveFields.forEach(({ id }) => {
+        const fieldElement = $(id);
+        if (fieldElement) {
           // Preserve free-text values saved before these dropdowns were introduced.
           if (id === "country" || id === "os") {
-            input.querySelectorAll("[data-legacy-option]").forEach(option => option.remove());
-            const match = Array.from(input.options).find(option =>
+            fieldElement.querySelectorAll("[data-legacy-option]").forEach(option => option.remove());
+            const match = Array.from(fieldElement.options).find(option =>
               option.value === note[id] || option.textContent.toLowerCase() === note[id].toLowerCase());
             if (!match && note[id]) {
               const option = document.createElement("option");
               option.value = note[id]; option.textContent = note[id];
-              option.setAttribute("data-legacy-option", ""); input.append(option);
+              option.setAttribute("data-legacy-option", ""); fieldElement.append(option);
             }
-            input.value = match ? match.value : note[id];
-          } else input.value = note[id];
+            fieldElement.value = match ? match.value : note[id];
+          } else if (fieldElement.value !== undefined) {
+            fieldElement.value = note[id];
+          }
         }
       });
     }
