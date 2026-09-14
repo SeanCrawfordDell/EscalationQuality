@@ -481,10 +481,8 @@
     const select = $("devinTask");
     const currentValue = select.value;
     
-    // Clear existing options except the first one
-    while (select.options.length > 1) {
-      select.remove(1);
-    }
+    // Clear all existing options
+    select.innerHTML = "";
     
     // Add all tasks
     Object.entries(allTasks).forEach(([id, task]) => {
