@@ -108,7 +108,7 @@
     $("backupHistory").disabled = loadFailed || copying;
     $("restoreHistory").disabled = !writable || copying;
     $("fields").disabled = !writable || copying;
-    $("newNote").disabled = $("startNote").disabled = !writable || copying;
+    $("newNote").disabled = $("startNote").disabled = $("customizeFields").disabled = !writable || copying;
     $("emailNote").disabled = $("copyNote").disabled = $("escalateNote").disabled = $("copyDevin").disabled = !writable || copying;
     $("devinTask").disabled = !writable || copying;
     $("stopTimer").disabled = !writable || copying || !selected() || selected().started === null;
@@ -124,21 +124,40 @@
   function render() {
     const note = selected();
     $("welcome").hidden = !!note; $("noteEditor").hidden = !note;
-    if (note) Object.keys(CaseNotes.fields).forEach(field => {
-      const input = $(field);
-      // Preserve free-text values saved before these dropdowns were introduced.
-      if (field === "country" || field === "os") {
-        input.querySelectorAll("[data-legacy-option]").forEach(option => option.remove());
-        const match = Array.from(input.options).find(option =>
-          option.value === note[field] || option.textContent.toLowerCase() === note[field].toLowerCase());
-        if (!match && note[field]) {
-          const option = document.createElement("option");
-          option.value = note[field]; option.textContent = note[field];
-          option.setAttribute("data-legacy-option", ""); input.append(option);
+    if (note) {
+      const effectiveFields = CaseNotes.getEffectiveFields(state);
+      effectiveFields.forEach(({ id, label }) => {
+        let input = $(id);
+        if (!input && state.fieldConfig.customFields[id]) {
+          // Create input for custom field
+          input = document.createElement("input");
+          input.id = id;
+          input.type = "text";
+          input.className = "field";
+          input.placeholder = label;
+          input.autocomplete = "off";
+          // Insert before the rich text fields
+          const notesField = $("notesLabel")?.closest(".field") || $("notes");
+          if (notesField) {
+            notesField.parentNode.insertBefore(input, notesField);
+          }
         }
-        input.value = match ? match.value : note[field];
-      } else input.value = note[field];
-    });
+        if (input) {
+          // Preserve free-text values saved before these dropdowns were introduced.
+          if (id === "country" || id === "os") {
+            input.querySelectorAll("[data-legacy-option]").forEach(option => option.remove());
+            const match = Array.from(input.options).find(option =>
+              option.value === note[id] || option.textContent.toLowerCase() === note[id].toLowerCase());
+            if (!match && note[id]) {
+              const option = document.createElement("option");
+              option.value = note[id]; option.textContent = note[id];
+              option.setAttribute("data-legacy-option", ""); input.append(option);
+            }
+            input.value = match ? match.value : note[id];
+          } else input.value = note[id];
+        }
+      });
+    }
     controls(); history(); tick();
     window.CaseMarkdown?.refresh();
     window.CaseToolkit?.refresh();
@@ -206,13 +225,155 @@
   });
   $("newNote").addEventListener("click", newNote);
   $("startNote").addEventListener("click", newNote);
+  
+  // Field customization
+  function renderFieldCustomizer() {
+    const effectiveFields = CaseNotes.getEffectiveFields(state);
+    const orderList = $("fieldOrderList");
+    orderList.innerHTML = "";
+    
+    effectiveFields.forEach(({ id, label }) => {
+      const item = document.createElement("div");
+      item.className = "field-order-item";
+      item.draggable = true;
+      item.dataset.fieldId = id;
+      
+      const isBuiltin = CaseNotes.fields[id];
+      item.innerHTML = `
+        <span class="field-handle">⋮⋮</span>
+        <span class="field-name">${label}</span>
+        ${isBuiltin ? '<span class="field-builtin">✓ Built-in</span>' : ''}
+      `;
+      
+      item.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("text/plain", id);
+        item.classList.add("dragging");
+      });
+      
+      item.addEventListener("dragend", () => {
+        item.classList.remove("dragging");
+      });
+      
+      item.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        const dragging = orderList.querySelector(".dragging");
+        if (dragging && dragging !== item) {
+          const rect = item.getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+          if (e.clientY < midY) {
+            orderList.insertBefore(dragging, item);
+          } else {
+            orderList.insertBefore(dragging, item.nextSibling);
+          }
+        }
+      });
+      
+      orderList.appendChild(item);
+    });
+    
+    // Render custom fields list
+    const customList = $("customFieldsList");
+    customList.innerHTML = "";
+    Object.entries(state.fieldConfig.customFields).forEach(([id, label]) => {
+      const item = document.createElement("div");
+      item.className = "custom-field-item";
+      item.innerHTML = `
+        <span class="field-id">${id}</span>
+        <span class="field-label">${label}</span>
+        <button class="remove-field" type="button" data-field-id="${id}">Remove</button>
+      `;
+      item.querySelector(".remove-field").addEventListener("click", () => {
+        if (confirm(`Remove custom field "${label}"? This will remove the field from all existing cases.`)) {
+          try {
+            CaseNotes.removeCustomField(state, id);
+            dirty = true;
+            renderFieldCustomizer();
+            $("customizerStatus").textContent = "Custom field removed. Save to apply changes.";
+          } catch (e) {
+            $("customizerStatus").textContent = e.message;
+          }
+        }
+      });
+      customList.appendChild(item);
+    });
+  }
+  
+  $("customizeFields").addEventListener("click", () => {
+    if (!writable || copying) return;
+    renderFieldCustomizer();
+    $("fieldCustomizer").showModal();
+    $("customizerStatus").textContent = "";
+  });
+  
+  $("closeCustomizer").addEventListener("click", () => {
+    $("fieldCustomizer").close();
+  });
+  
+  $("addCustomField").addEventListener("click", () => {
+    const fieldId = $("newFieldId").value.trim();
+    const fieldLabel = $("newFieldLabel").value.trim();
+    
+    if (!fieldId || !fieldLabel) {
+      $("customizerStatus").textContent = "Enter both field ID and label.";
+      return;
+    }
+    
+    try {
+      CaseNotes.addCustomField(state, fieldId, fieldLabel);
+      dirty = true;
+      $("newFieldId").value = "";
+      $("newFieldLabel").value = "";
+      renderFieldCustomizer();
+      $("customizerStatus").textContent = "Custom field added. Save to apply changes.";
+    } catch (e) {
+      $("customizerStatus").textContent = e.message;
+    }
+  });
+  
+  $("saveFieldConfig").addEventListener("click", () => {
+    const orderList = $("fieldOrderList");
+    const newOrder = Array.from(orderList.children).map(item => item.dataset.fieldId);
+    
+    try {
+      CaseNotes.reorderFields(state, newOrder);
+      save();
+      $("fieldCustomizer").close();
+      render(); // Re-render form with new field order
+      $("copyStatus").textContent = "Field configuration saved.";
+    } catch (e) {
+      $("customizerStatus").textContent = e.message;
+    }
+  });
+  
+  $("resetFields").addEventListener("click", () => {
+    if (confirm("Reset all fields to default order and remove custom fields? This cannot be undone.")) {
+      state.fieldConfig = { order: [...CaseNotes.defaultFieldOrder], customFields: {} };
+      // Remove custom fields from all cases
+      state.cases.forEach(note => {
+        Object.keys(CaseNotes.fields).forEach(key => {
+          if (!Object.hasOwn(note, key)) note[key] = "";
+        });
+        Object.keys(state.fieldConfig.customFields).forEach(key => {
+          delete note[key];
+        });
+      });
+      dirty = true;
+      save();
+      $("fieldCustomizer").close();
+      render();
+      $("copyStatus").textContent = "Fields reset to default.";
+    }
+  });
   $("search").addEventListener("input", history);
   $("followupFilter").addEventListener("change", history);
   setInterval(() => { if (!$("historyList").contains(document.activeElement)) history(); }, 60000);
   $("retrySave").addEventListener("click", save);
   $("noteForm").addEventListener("submit", event => event.preventDefault());
   $("noteForm").addEventListener("input", event => {
-    if (!writable || copying || !Object.hasOwn(CaseNotes.fields, event.target.id)) return;
+    if (!writable || copying) return;
+    const effectiveFields = CaseNotes.getEffectiveFields(state);
+    const fieldIds = effectiveFields.map(f => f.id);
+    if (!fieldIds.includes(event.target.id)) return;
     const note = selected(); if (!note) return;
     const now = Date.now(); const restarting = note.started === null;
     CaseNotes.start(state, note, now);
@@ -251,7 +412,7 @@
     if (!note || !writable || copying || !save()) return;
     try {
       const token = crypto.randomUUID();
-      sessionStorage.setItem("dell-support.escalation." + token, JSON.stringify(CaseNotes.escalation(note, Date.now())));
+      sessionStorage.setItem("dell-support.escalation." + token, JSON.stringify(CaseNotes.escalation(note, Date.now(), state.fieldConfig)));
       window.location.assign("escalation-quality.html#import=" + token);
     } catch {
       $("copyStatus").textContent = "Could not open the escalation. Check browser storage access and try again. Your note is still here.";

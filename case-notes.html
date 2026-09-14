@@ -27,7 +27,7 @@
     <div class="theme-controls" role="group" aria-label="Appearance"><button id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button></div>
   </header>
   <main>
-    <section class="hero"><div><p class="eyebrow">DELL PRO-SUPPORT</p><h1>Case Notes</h1><p>Capture the details. Keep the next step clear.</p></div><button class="button primary" id="newNote" disabled>+ New Note</button></section>
+    <section class="hero"><div><p class="eyebrow">DELL PRO-SUPPORT</p><h1>Case Notes</h1><p>Capture the details. Keep the next step clear.</p></div><div class="hero-actions"><button class="button primary" id="newNote" disabled>+ New Note</button><button class="button secondary" id="customizeFields" disabled>Customize Fields</button></div></section>
     <p class="notice" id="lockNotice" role="status">Opening case history…</p>
     <button class="button secondary" id="toggleHistory" type="button" aria-controls="caseHistory" aria-expanded="true">Hide Recent Cases</button>
     <div class="notes-layout" id="notesLayout">
@@ -64,6 +64,32 @@
 </div><div id="helperResults"></div>
 <details id="helperPlain"><summary>Plain text plan</summary><textarea id="helperPlanText" aria-label="Log collection plan" readonly></textarea></details>
 <div class="log-helper-actions"><button id="helperCopy" class="button secondary" type="button">Copy plan</button><button id="helperAdd" class="button primary" type="button">Add plan</button></div><p id="helperStatus" role="status"></p>
+</dialog>
+<dialog id="fieldCustomizer" class="field-customizer-dialog" aria-labelledby="customizerTitle">
+<div class="customizer-heading"><h2 id="customizerTitle">Customize Case Fields</h2><button class="button secondary" id="closeCustomizer" type="button">Close</button></div>
+<p class="customizer-help">Add custom fields and reorder all fields. Built-in fields are protected for escalation compatibility but can be reordered.</p>
+<div class="customizer-section">
+<h3>Field Order</h3>
+<p class="customizer-help">Drag and drop to reorder fields. Built-in fields (marked with ✓) are required for escalation.</p>
+<div id="fieldOrderList" class="field-order-list"></div>
+</div>
+<div class="customizer-section">
+<h3>Add Custom Field</h3>
+<div class="field-grid">
+<label class="field">Field ID<input id="newFieldId" placeholder="e.g., customerContact" pattern="[a-zA-Z0-9_-]+" title="Letters, numbers, underscores, and hyphens only"></label>
+<label class="field">Field Label<input id="newFieldLabel" placeholder="e.g., Customer Contact"></label>
+</div>
+<button class="button primary" id="addCustomField" type="button">Add Field</button>
+</div>
+<div class="customizer-section">
+<h3>Custom Fields</h3>
+<div id="customFieldsList" class="custom-fields-list"></div>
+</div>
+<div class="customizer-actions">
+<button class="button secondary" id="resetFields" type="button">Reset to Default</button>
+<button class="button primary" id="saveFieldConfig" type="button">Save Configuration</button>
+</div>
+<p id="customizerStatus" role="status"></p>
 </dialog>
 </body>
 </html>

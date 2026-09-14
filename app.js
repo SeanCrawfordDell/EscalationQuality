@@ -288,6 +288,16 @@ try {
     if (hasWork() && !confirm("Start a new escalation from Case Notes and replace the saved escalation draft?")) return;
     populate(imported); actions = []; checks = imported.checks && typeof imported.checks === "object" ? Object.fromEntries(Object.entries(imported.checks).filter(([,v]) => typeof v === "boolean")) : {};
     issueType = Object.hasOwn(CaseToolkitCore.templates,imported.issueType) ? imported.issueType : "general";
+    // Handle custom fields by adding them to the source note
+    if (imported.customFields && typeof imported.customFields === "object") {
+      const customFieldText = Object.entries(imported.customFields)
+        .map(([label, value]) => `${label}:\n${value}`)
+        .join("\n\n");
+      if (customFieldText) {
+        const currentSource = byId("sourceNote").value;
+        byId("sourceNote").value = currentSource ? `${currentSource}\n\n${customFieldText}` : customFieldText;
+      }
+    }
     renderActions();
     dirty = true;
     if (saveDraft()) { sessionStorage.removeItem(key); history.replaceState(null,"",location.pathname+location.search); }

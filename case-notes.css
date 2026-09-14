@@ -46,6 +46,29 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 @media(max-width:800px) { .notes-layout { grid-template-columns:1fr; } #historyList { max-height:190px; } #welcome { padding:40px 10px; } }
 @media(max-width:500px) { .copy-actions { position:static; margin:24px 0 0; display:flex; align-items:stretch; flex-direction:column; } .hero>button { margin-top:18px; } }
 
+.hero-actions { display:flex; gap:12px; flex-wrap:wrap; }
+.field-customizer-dialog { max-width:600px; width:90%; }
+.customizer-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; }
+.customizer-heading h2 { margin:0; font-size:18px; }
+.customizer-help { color:var(--muted); font-size:13px; line-height:1.5; margin-bottom:20px; }
+.customizer-section { margin-bottom:24px; padding-bottom:24px; border-bottom:1px solid var(--line); }
+.customizer-section:last-child { border-bottom:none; }
+.customizer-section h3 { margin:0 0 12px; font-size:15px; }
+.field-order-list { display:grid; gap:8px; max-height:300px; overflow:auto; }
+.field-order-item { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--input-bg); cursor:move; }
+.field-order-item.dragging { opacity:0.5; }
+.field-order-item .field-handle { cursor:move; color:var(--muted); font-size:18px; user-select:none; }
+.field-order-item .field-name { flex:1; font-weight:500; }
+.field-order-item .field-builtin { color:var(--blue); font-size:12px; margin-left:8px; }
+.custom-fields-list { display:grid; gap:8px; }
+.custom-field-item { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--input-bg); }
+.custom-field-item .field-id { font-family:monospace; font-size:12px; color:var(--muted); }
+.custom-field-item .field-label { flex:1; font-weight:500; }
+.custom-field-item .remove-field { color:var(--red); background:none; border:none; cursor:pointer; padding:4px 8px; font-size:14px; }
+.custom-field-item .remove-field:hover { background:var(--red); color:white; border-radius:4px; }
+.customizer-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:24px; }
+@media(max-width:600px) { .field-order-item { flex-direction:column; align-items:flex-start; } .customizer-actions { flex-direction:column; } }
+
 .note-actions { grid-area:actions; display:flex; flex-wrap:wrap; gap:10px; }
 @media(max-width:500px) { .note-actions { flex-direction:column; } }
 
