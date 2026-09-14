@@ -474,6 +474,101 @@
       $("devinStatus").textContent = "Could not copy the AI prompt. Allow clipboard access and try again.";
     } finally { copying = false; controls(); history(); }
   });
+  
+  // AI Task Management
+  function loadAiTasks() {
+    const allTasks = DevinPrompt.getAllTasks();
+    const select = $("devinTask");
+    const currentValue = select.value;
+    
+    // Clear existing options except the first one
+    while (select.options.length > 1) {
+      select.remove(1);
+    }
+    
+    // Add all tasks
+    Object.entries(allTasks).forEach(([id, task]) => {
+      const option = document.createElement("option");
+      option.value = id;
+      option.textContent = task.label;
+      select.appendChild(option);
+    });
+    
+    // Restore selection if it still exists
+    if (allTasks[currentValue]) {
+      select.value = currentValue;
+    } else {
+      select.value = "review";
+    }
+  }
+  
+  function renderCustomAiTasks() {
+    const customTasks = DevinPrompt.getCustomTasks();
+    const list = $("customAiTasksList");
+    list.innerHTML = "";
+    
+    Object.entries(customTasks).forEach(([id, task]) => {
+      const item = document.createElement("div");
+      item.className = "custom-task-item";
+      item.innerHTML = `
+        <span class="task-id">${id}</span>
+        <div class="task-info">
+          <span class="task-label">${task.label}</span>
+          <span class="task-instruction">${task.instruction.substring(0, 100)}${task.instruction.length > 100 ? '...' : ''}</span>
+        </div>
+        <button class="remove-task" type="button" data-task-id="${id}">Remove</button>
+      `;
+      item.querySelector(".remove-task").addEventListener("click", () => {
+        if (confirm(`Remove custom task "${task.label}"?`)) {
+          try {
+            DevinPrompt.removeCustomTask(id);
+            renderCustomAiTasks();
+            loadAiTasks();
+            $("aiTasksStatus").textContent = "Custom task removed.";
+          } catch (e) {
+            $("aiTasksStatus").textContent = e.message;
+          }
+        }
+      });
+      list.appendChild(item);
+    });
+  }
+  
+  $("manageAiTasks").addEventListener("click", () => {
+    renderCustomAiTasks();
+    $("aiTasksDialog").showModal();
+    $("aiTasksStatus").textContent = "";
+  });
+  
+  $("closeAiTasks").addEventListener("click", () => {
+    $("aiTasksDialog").close();
+  });
+  
+  $("addAiTask").addEventListener("click", () => {
+    const id = $("newAiTaskId").value.trim();
+    const label = $("newAiTaskLabel").value.trim();
+    const instruction = $("newAiTaskInstruction").value.trim();
+    
+    if (!id || !label || !instruction) {
+      $("aiTasksStatus").textContent = "Please fill in all fields.";
+      return;
+    }
+    
+    try {
+      DevinPrompt.addCustomTask(id, label, instruction);
+      $("newAiTaskId").value = "";
+      $("newAiTaskLabel").value = "";
+      $("newAiTaskInstruction").value = "";
+      renderCustomAiTasks();
+      loadAiTasks();
+      $("aiTasksStatus").textContent = "Custom task added. It will be available in the dropdown.";
+    } catch (e) {
+      $("aiTasksStatus").textContent = e.message;
+    }
+  });
+  
+  // Load custom AI tasks on page load
+  loadAiTasks();
   setInterval(() => { if (dirty) save(); }, 10000);
   setInterval(tick, 1000);
   function updateFloatingActions() {

@@ -107,7 +107,7 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
           <div id="emptyState"><div class="empty-icon">✓</div><h2>Ready when you are</h2><p>Complete the form and run the review. You’ll receive a transparent score and field-level feedback.</p></div>
           <div id="reviewState" hidden>
             <div class="score-header"><div><p class="eyebrow">READINESS RESULT</p><span class="status-pill" id="statusPill"></span><h2 id="resultTitle"></h2><p id="resultSummary"></p></div><div class="score-ring" id="scoreRing"><strong id="scoreValue">0</strong><small>/ 100</small></div></div>
-            <div class="copy-section" id="copySection" hidden><label class="field">Escalation preview<textarea id="copyPreview" readonly rows="16"></textarea></label><button class="button primary" id="copyButton" type="button">Copy escalation data</button><p id="copyStatus" role="status"></p><div class="devin-copy"><label class="field">Ask AI to<select id="devinTask"><option value="review">Review the case</option><option value="improve">Improve the case notes</option><option value="troubleshoot">Suggest next troubleshooting</option><option value="logs">Recommend logs to collect</option></select></label><button class="button secondary" id="copyDevin" type="button">Copy to AI</button><p id="devinStatus" role="status">Copies a prompt for AI tools. Review the included escalation data before pasting.</p></div></div>
+            <div class="copy-section" id="copySection" hidden><label class="field">Escalation preview<textarea id="copyPreview" readonly rows="16"></textarea></label><button class="button primary" id="copyButton" type="button">Copy escalation data</button><p id="copyStatus" role="status"></p><div class="devin-copy"><label class="field">Ask AI to<select id="devinTask"><option value="review">Review the case</option><option value="improve">Improve the case notes</option><option value="troubleshoot">Suggest next troubleshooting</option><option value="logs">Recommend logs to collect</option></select></label><button class="button secondary" id="manageAiTasks" type="button">Manage Tasks</button><button class="button secondary" id="copyDevin" type="button">Copy to AI</button><p id="devinStatus" role="status">Copies a prompt for AI tools. Review the included escalation data before pasting.</p></div></div>
             <div class="meter"><span id="scoreBar"></span></div>
             <div class="category-grid" id="categoryGrid"></div>
             <div class="feedback-section" id="blockersSection"><h3>Blocking issues <span id="blockerCount"></span></h3><div id="blockers"></div></div>
@@ -138,6 +138,24 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 </div><div id="helperResults"></div>
 <details id="helperPlain"><summary>Plain text plan</summary><textarea id="helperPlanText" aria-label="Log collection plan" readonly></textarea></details>
 <div class="log-helper-actions"><button id="helperCopy" class="button secondary" type="button">Copy plan</button><button id="helperAdd" class="button primary" type="button">Add plan</button></div><p id="helperStatus" role="status"></p>
+</dialog>
+<dialog id="aiTasksDialog" class="ai-tasks-dialog" aria-labelledby="aiTasksTitle">
+<div class="ai-tasks-heading"><h2 id="aiTasksTitle">Manage AI Tasks</h2><button class="button secondary" id="closeAiTasks" type="button">Close</button></div>
+<p class="ai-tasks-help">Add custom AI tasks to the dropdown. These tasks are saved in your browser and will be available in both Case Notes and Escalation Quality.</p>
+<div class="ai-tasks-section">
+<h3>Add Custom Task</h3>
+<div class="field-grid">
+<label class="field">Task ID<input id="newAiTaskId" placeholder="e.g., security-analysis" pattern="[a-zA-Z0-9_-]+" title="Letters, numbers, underscores, and hyphens only"></label>
+<label class="field">Task Label<input id="newAiTaskLabel" placeholder="e.g., Security Analysis"></label>
+<label class="field wide">Instruction<textarea id="newAiTaskInstruction" placeholder="Describe what the AI should do with the case data..." rows="3"></textarea></label>
+</div>
+<button class="button primary" id="addAiTask" type="button">Add Task</button>
+</div>
+<div class="ai-tasks-section">
+<h3>Custom Tasks</h3>
+<div id="customAiTasksList" class="custom-tasks-list"></div>
+</div>
+<p id="aiTasksStatus" role="status"></p>
 </dialog>
 </body>
 </html>

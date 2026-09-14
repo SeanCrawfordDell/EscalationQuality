@@ -2,7 +2,7 @@
 // Builds portable prompts for AI tools.
 // No case data leaves the browser until the user pastes the copied prompt into their AI tool.
 const DevinPrompt = (() => {
-  const tasks = {
+  const defaultTasks = {
     review: {
       label: "Review the case",
       instruction: "Review this support case for missing facts, contradictions, unclear reproduction steps, and troubleshooting without recorded outcomes. Return a short, prioritized list of questions or edits. Do not claim that an action, test, or log was completed unless the case data says so."
@@ -20,8 +20,50 @@ const DevinPrompt = (() => {
       instruction: "Recommend targeted logs or diagnostic evidence for this scenario. Explain why each item matters, prefer official vendor guidance where applicable, and distinguish a collection plan from logs that have already been gathered."
     }
   };
+  
+  function getCustomTasks() {
+    if (typeof localStorage === "undefined") return {};
+    try {
+      const stored = localStorage.getItem("dell-support.custom-ai-tasks");
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  }
+  
+  function saveCustomTasks(customTasks) {
+    if (typeof localStorage === "undefined") return false;
+    try {
+      localStorage.setItem("dell-support.custom-ai-tasks", JSON.stringify(customTasks));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  
+  function addCustomTask(id, label, instruction) {
+    if (!/^[a-zA-Z0-9_-]+$/.test(id)) throw Error("Invalid task ID");
+    const customTasks = getCustomTasks();
+    if (defaultTasks[id] || customTasks[id]) throw Error("Task already exists");
+    customTasks[id] = { label, instruction };
+    return saveCustomTasks(customTasks);
+  }
+  
+  function removeCustomTask(id) {
+    if (defaultTasks[id]) throw Error("Cannot remove default task");
+    const customTasks = getCustomTasks();
+    if (!customTasks[id]) throw Error("Custom task not found");
+    delete customTasks[id];
+    return saveCustomTasks(customTasks);
+  }
+  
+  function getAllTasks() {
+    return { ...defaultTasks, ...getCustomTasks() };
+  }
+  
   function build(task, source, caseText) {
-    const choice = tasks[task] || tasks.review;
+    const allTasks = getAllTasks();
+    const choice = allTasks[task] || defaultTasks.review;
     const data = typeof caseText === "string" ? caseText.trim() : "";
     if (!data) throw Error("No case details available");
     return [
@@ -36,6 +78,6 @@ const DevinPrompt = (() => {
       "--- END CASE DATA ---"
     ].join("\n");
   }
-  return { tasks, build };
+  return { defaultTasks, getAllTasks, build, addCustomTask, removeCustomTask, getCustomTasks };
 })();
 if (typeof module !== "undefined") module.exports = DevinPrompt;
