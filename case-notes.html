@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="case-notes.css">
+  <link rel="stylesheet" href="escalation-demo.css">
   <script src="vendor/marked.umd.js" defer></script>
   <script src="vendor/purify.min.js" defer></script>
   <script src="case-markdown.js" defer></script>
@@ -20,6 +21,7 @@
 <script src="log-helper-core.js" defer></script>
 <script src="log-helper.js" defer></script>
 <script src="case-notes.js" defer></script>
+<script src="case-notes-demo.js" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -27,7 +29,7 @@
     <div class="theme-controls" role="group" aria-label="Appearance"><button id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button></div>
   </header>
   <main>
-    <section class="hero"><div><p class="eyebrow">DELL PRO-SUPPORT</p><h1>Case Notes</h1><p>Capture the details. Keep the next step clear.</p></div><div class="hero-actions"><button class="button primary" id="newNote" disabled>+ New Note</button><button class="button secondary" id="loadExampleNote" disabled>Load Example</button><button class="button secondary" id="customizeFields" disabled>Customize Fields</button></div></section>
+    <section class="hero"><div><p class="eyebrow">DELL PRO-SUPPORT</p><h1>Case Notes</h1><p>Capture the details. Keep the next step clear.</p></div><div class="hero-actions"><button class="button primary" id="newNote" disabled>+ New Note</button><button class="button secondary" id="loadExampleNote" disabled>Load Example</button><button class="button secondary" id="tutorialDemo" type="button">Tutorial Demo</button><button class="button secondary" id="customizeFields" disabled>Customize Fields</button></div></section>
     <p class="notice" id="lockNotice" role="status">Opening case history…</p>
     <button class="button secondary" id="toggleHistory" type="button" aria-controls="caseHistory" aria-expanded="true">Hide Recent Cases</button>
     <div class="notes-layout" id="notesLayout">
@@ -117,6 +119,14 @@
 <button class="button primary" id="saveFieldConfig" type="button">Save Configuration</button>
 </div>
 <p id="customizerStatus" role="status"></p>
+</dialog>
+<dialog id="featureDemo" aria-labelledby="demoTitle" aria-describedby="demoDescription">
+    <div class="demo-top"><p class="eyebrow">Case Notes · QUICK TOUR</p><button id="skipDemo" class="button secondary" type="button">Skip demo</button></div>
+    <p id="demoProgress" class="demo-progress"></p>
+    <h2 id="demoTitle"></h2><p id="demoDescription"></p>
+    <section class="demo-example" aria-label="Feature example"><span id="demoExampleLabel"></span><p id="demoExample"></p></section>
+    <p class="demo-safety">This demo leaves your case history unchanged.</p>
+    <div class="demo-footer"><button id="demoBack" class="button secondary" type="button">Back</button><button id="demoNext" class="button primary" type="button">Next</button></div>
 </dialog>
 </body>
 </html>
