@@ -299,7 +299,6 @@ function renderCustomAiTasks() {
     const item = document.createElement("div");
     item.className = "custom-task-item";
     item.innerHTML = `
-      <span class="task-id">${id}</span>
       <div class="task-info">
         <span class="task-label">${task.label}</span>
         <span class="task-instruction">${task.instruction.substring(0, 100)}${task.instruction.length > 100 ? '...' : ''}</span>
@@ -333,18 +332,24 @@ byId("closeAiTasks").addEventListener("click", () => {
 });
 
 byId("addAiTask").addEventListener("click", () => {
-  const id = byId("newAiTaskId").value.trim();
   const label = byId("newAiTaskLabel").value.trim();
   const instruction = byId("newAiTaskInstruction").value.trim();
   
-  if (!id || !label || !instruction) {
+  if (!label || !instruction) {
     byId("aiTasksStatus").textContent = "Please fill in all fields.";
     return;
   }
   
   try {
-    DevinPrompt.addCustomTask(id, label, instruction);
-    byId("newAiTaskId").value = "";
+    // Auto-generate ID from label
+    const id = label.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .substring(0, 50);
+    
+    DevinPrompt.addCustomTask(null, label, instruction); // Pass null to auto-generate ID
     byId("newAiTaskLabel").value = "";
     byId("newAiTaskInstruction").value = "";
     renderCustomAiTasks();

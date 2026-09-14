@@ -42,6 +42,17 @@ const DevinPrompt = (() => {
   }
   
   function addCustomTask(id, label, instruction) {
+    // Auto-generate ID from label if not provided
+    if (!id) {
+      id = label.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .substring(0, 50);
+      if (!id) throw Error("Could not generate task ID from label");
+    }
+    
     if (!/^[a-zA-Z0-9_-]+$/.test(id)) throw Error("Invalid task ID");
     const customTasks = getCustomTasks();
     if (defaultTasks[id] || customTasks[id]) throw Error("Task already exists");

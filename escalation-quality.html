@@ -145,9 +145,8 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
 <div class="ai-tasks-section">
 <h3>Add Custom Task</h3>
 <div class="field-grid">
-<label class="field">Task ID<input id="newAiTaskId" placeholder="e.g., security-analysis" pattern="[a-zA-Z0-9_-]+" title="Letters, numbers, underscores, and hyphens only"></label>
-<label class="field">Task Label<input id="newAiTaskLabel" placeholder="e.g., Security Analysis"></label>
-<label class="field wide">Instruction<textarea id="newAiTaskInstruction" placeholder="Describe what the AI should do with the case data..." rows="3"></textarea></label>
+<label class="field">Task Label<input id="newAiTaskLabel" placeholder="e.g., Security Analysis" required></label>
+<label class="field wide">Instruction<textarea id="newAiTaskInstruction" placeholder="Describe what the AI should do with the case data..." rows="3" required></textarea></label>
 </div>
 <button class="button primary" id="addAiTask" type="button">Add Task</button>
 </div>
