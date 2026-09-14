@@ -108,7 +108,7 @@
     $("backupHistory").disabled = loadFailed || copying;
     $("restoreHistory").disabled = !writable || copying;
     $("fields").disabled = !writable || copying;
-    $("newNote").disabled = $("startNote").disabled = $("customizeFields").disabled = !writable || copying;
+    $("newNote").disabled = $("startNote").disabled = $("loadExampleNote").disabled = $("customizeFields").disabled = !writable || copying;
     $("emailNote").disabled = $("copyNote").disabled = $("escalateNote").disabled = $("copyDevin").disabled = !writable || copying;
     $("devinTask").disabled = !writable || copying;
     $("stopTimer").disabled = !writable || copying || !selected() || selected().started === null;
@@ -255,6 +255,42 @@
   });
   $("newNote").addEventListener("click", newNote);
   $("startNote").addEventListener("click", newNote);
+  
+  function populate(data) {
+    Object.entries(data).forEach(([id, value]) => {
+      const input = $(id);
+      if (input) {
+        input.value = value;
+      }
+    });
+  }
+  
+  function loadExampleNote() {
+    if (!writable || copying) return;
+    if (formHasData && !confirm("Replace the current case with an example? This will overwrite your current work.")) return;
+    
+    const exampleData = {
+      tag: "ABC1234",
+      platform: "PowerEdge R750",
+      request: "123456789",
+      os: "Windows Server",
+      osVersion: "Windows Server 2022",
+      country: "US",
+      supportType: "OEM",
+      logLocation: "Case attachments: Lifecycle Controller log and browser network trace",
+      issue: "PowerEdge R750 iDRAC web interface returns HTTP 503 after login while Redfish API remains available. The issue affects only the management UI on one host.",
+      notes: "1. Tested Chrome and Edge to exclude browser cache issues.\n2. Tested from a second workstation on VLAN 120 - same result.\n3. Restarted iDRAC management controller - UI returned for 12 minutes, then 503 returned.\n4. Exported Lifecycle Controller log showing RAC0182 errors before each failure.\n5. Compared settings with healthy host DC2-HV-046 - all settings match except firmware version.",
+      next: "1. Upgrade iDRAC firmware from 7.10.20.00 to 7.10.30.00 on affected host.\n2. Monitor for 24 hours after firmware update to confirm issue is resolved.\n3. If issue persists, escalate to Dell engineering for further investigation."
+    };
+    
+    populate(exampleData);
+    dirty = true;
+    save();
+    render();
+    $("copyStatus").textContent = "Example case note loaded. You can modify it before saving.";
+  }
+  
+  $("loadExampleNote").addEventListener("click", loadExampleNote);
   
   // Field customization
   function renderFieldCustomizer() {
