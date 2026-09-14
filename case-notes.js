@@ -258,9 +258,25 @@
   
   function populate(data) {
     Object.entries(data).forEach(([id, value]) => {
-      const input = $(id);
-      if (input) {
-        input.value = value;
+      if (id === "notes") {
+        const richEditor = $("notesRich");
+        const textarea = $("notes");
+        if (richEditor && textarea) {
+          richEditor.innerHTML = value;
+          textarea.value = value;
+        }
+      } else if (id === "next") {
+        const richEditor = $("nextRich");
+        const textarea = $("next");
+        if (richEditor && textarea) {
+          richEditor.innerHTML = value;
+          textarea.value = value;
+        }
+      } else {
+        const input = $(id);
+        if (input) {
+          input.value = value;
+        }
       }
     });
   }
@@ -279,8 +295,8 @@
       supportType: "OEM",
       logLocation: "Case attachments: Lifecycle Controller log and browser network trace",
       issue: "PowerEdge R750 iDRAC web interface returns HTTP 503 after login while Redfish API remains available. The issue affects only the management UI on one host.",
-      notes: "1. Tested Chrome and Edge to exclude browser cache issues.\n2. Tested from a second workstation on VLAN 120 - same result.\n3. Restarted iDRAC management controller - UI returned for 12 minutes, then 503 returned.\n4. Exported Lifecycle Controller log showing RAC0182 errors before each failure.\n5. Compared settings with healthy host DC2-HV-046 - all settings match except firmware version.",
-      next: "1. Upgrade iDRAC firmware from 7.10.20.00 to 7.10.30.00 on affected host.\n2. Monitor for 24 hours after firmware update to confirm issue is resolved.\n3. If issue persists, escalate to Dell engineering for further investigation."
+      notes: "1. Tested Chrome and Edge to exclude browser cache issues.<br>2. Tested from a second workstation on VLAN 120 - same result.<br>3. Restarted iDRAC management controller - UI returned for 12 minutes, then 503 returned.<br>4. Exported Lifecycle Controller log showing RAC0182 errors before each failure.<br>5. Compared settings with healthy host DC2-HV-046 - all settings match except firmware version.",
+      next: "1. Upgrade iDRAC firmware from 7.10.20.00 to 7.10.30.00 on affected host.<br>2. Monitor for 24 hours after firmware update to confirm issue is resolved.<br>3. If issue persists, escalate to Dell engineering for further investigation."
     };
     
     populate(exampleData);
