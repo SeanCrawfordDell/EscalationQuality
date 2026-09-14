@@ -329,6 +329,18 @@ byId("closeAiTasks").addEventListener("click", () => {
   byId("aiTasksDialog").close();
 });
 
+byId("loadExampleTask").addEventListener("click", () => {
+  byId("newAiTaskLabel").value = "Security Analysis";
+  byId("newAiTaskInstruction").value = "Analyze this support case for potential security vulnerabilities, data exposure risks, and compliance issues. Identify any security-related gaps in the investigation or evidence collection process.";
+  byId("aiTasksStatus").textContent = "Example loaded. You can modify it before adding.";
+});
+
+byId("clearTaskForm").addEventListener("click", () => {
+  byId("newAiTaskLabel").value = "";
+  byId("newAiTaskInstruction").value = "";
+  byId("aiTasksStatus").textContent = "Form cleared.";
+});
+
 byId("addAiTask").addEventListener("click", () => {
   const label = byId("newAiTaskLabel").value.trim();
   const instruction = byId("newAiTaskInstruction").value.trim();

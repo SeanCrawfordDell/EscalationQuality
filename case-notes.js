@@ -541,6 +541,18 @@
     $("aiTasksDialog").close();
   });
   
+  $("loadExampleTask").addEventListener("click", () => {
+    $("newAiTaskLabel").value = "Security Analysis";
+    $("newAiTaskInstruction").value = "Analyze this support case for potential security vulnerabilities, data exposure risks, and compliance issues. Identify any security-related gaps in the investigation or evidence collection process.";
+    $("aiTasksStatus").textContent = "Example loaded. You can modify it before adding.";
+  });
+  
+  $("clearTaskForm").addEventListener("click", () => {
+    $("newAiTaskLabel").value = "";
+    $("newAiTaskInstruction").value = "";
+    $("aiTasksStatus").textContent = "Form cleared.";
+  });
+  
   $("addAiTask").addEventListener("click", () => {
     const label = $("newAiTaskLabel").value.trim();
     const instruction = $("newAiTaskInstruction").value.trim();
