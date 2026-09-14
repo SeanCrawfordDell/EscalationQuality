@@ -282,8 +282,18 @@
   }
   
   function loadExampleNote() {
-    if (!writable || copying) return;
-    if (formHasData && !confirm("Replace the current case with an example? This will overwrite your current work.")) return;
+    console.log("loadExampleNote called, writable:", writable, "copying:", copying);
+    if (!writable || copying) {
+      console.log("Button disabled - writable:", writable, "copying:", copying);
+      return;
+    }
+    
+    // Check if there's already data in the form
+    const currentTag = $("tag")?.value || "";
+    const currentIssue = $("issue")?.value || "";
+    const hasData = currentTag || currentIssue;
+    
+    if (hasData && !confirm("Replace the current case with an example? This will overwrite your current work.")) return;
     
     const exampleData = {
       tag: "ABC1234",
@@ -299,14 +309,22 @@
       next: "1. Upgrade iDRAC firmware from 7.10.20.00 to 7.10.30.00 on affected host.<br>2. Monitor for 24 hours after firmware update to confirm issue is resolved.<br>3. If issue persists, escalate to Dell engineering for further investigation."
     };
     
+    console.log("Populating example data");
     populate(exampleData);
     dirty = true;
     save();
     render();
     $("copyStatus").textContent = "Example case note loaded. You can modify it before saving.";
+    console.log("Example loaded successfully");
   }
   
-  $("loadExampleNote").addEventListener("click", loadExampleNote);
+  const loadExampleBtn = $("loadExampleNote");
+  if (loadExampleBtn) {
+    console.log("Adding event listener to loadExampleNote button");
+    loadExampleBtn.addEventListener("click", loadExampleNote);
+  } else {
+    console.error("loadExampleNote button not found");
+  }
   
   // Field customization
   function renderFieldCustomizer() {
