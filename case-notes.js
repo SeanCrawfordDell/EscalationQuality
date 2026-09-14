@@ -76,9 +76,9 @@
       const button = document.createElement("button"); button.className = "case-item";
       button.setAttribute("aria-current", String(note.id === state.selected));
       button.disabled = copying;
-      const title = document.createElement("strong"); title.textContent = note.tag || note.request || "Untitled case";
+      const title = document.createElement("strong"); title.textContent = note.request || note.tag || "Untitled case";
       const issue = document.createElement("span"); issue.textContent = note.issue || "No issue description yet";
-      const meta = document.createElement("small"); meta.textContent = `${note.request ? note.request + " · " : ""}${new Date(note.created).toLocaleString()}`;
+      const meta = document.createElement("small"); meta.textContent = `${note.tag ? note.tag + " · " : ""}${new Date(note.created).toLocaleString()}`;
       button.append(title, issue, meta);
       if (note.toolkit) {
         const badge = document.createElement("small");
