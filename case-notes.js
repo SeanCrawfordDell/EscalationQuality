@@ -313,17 +313,15 @@
     populate(exampleData);
     dirty = true;
     save();
-    render();
+    // Don't call render() since we've already populated the form directly
+    // render() would overwrite our values with the saved note data
     $("copyStatus").textContent = "Example case note loaded. You can modify it before saving.";
     console.log("Example loaded successfully");
   }
   
   const loadExampleBtn = $("loadExampleNote");
   if (loadExampleBtn) {
-    console.log("Adding event listener to loadExampleNote button");
     loadExampleBtn.addEventListener("click", loadExampleNote);
-  } else {
-    console.error("loadExampleNote button not found");
   }
   
   // Field customization
