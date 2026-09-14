@@ -5,6 +5,7 @@ function harness({stored=null,failStorage=false,failClipboard=false,imported=nul
  class Element {
   constructor(tag='div'){this.tagName=tag.toUpperCase();this.value='';this.textContent='';this.children=[];this.listeners={};this.attributes={};this.hidden=false;this.style={};this.options=[];this.classList={add(){},remove(){},toggle(){}};}
   append(...items){for(const item of items){if(typeof item==='object'){item.parent=this;if(item.tagName==='OPTION')this.options.push(item);}this.children.push(item)}}
+  appendChild(item){this.append(item);return item}
   replaceChildren(...items){this.children=[];this.append(...items)}
   after(item){if(item.id)nodes[item.id]=item;this.parent?.append(item)}
   remove(){if(this.id)delete nodes[this.id]}

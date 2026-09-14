@@ -1,4 +1,11 @@
 [hidden] { display:none!important; }
+.note-section { margin-bottom:20px; }
+.note-section:last-child { margin-bottom:0; }
+.section-toggle { display:flex; align-items:center; gap:9px; width:100%; text-align:left; background:none; border:none; padding:0 0 12px; margin:0; font:inherit; font-size:15px; font-weight:800; color:var(--ink); cursor:pointer; }
+.section-toggle:hover { color:var(--blue); }
+.section-arrow { display:inline-block; flex:none; transition:transform .15s ease; color:var(--blue); font-size:12px; }
+.note-section.collapsed .section-arrow { transform:rotate(-90deg); }
+.note-section.collapsed .section-content { display:none; }
 .notes-layout { display:grid; grid-template-columns:290px minmax(0,1fr); gap:22px; align-items:start; }
 .history { padding:20px; }
 .history-heading,.editor-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; }
@@ -103,6 +110,8 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 .delete-case:hover:not(:disabled) { background:var(--red-soft); color:var(--red); }
 .delete-case svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
 
+.timer-total { display:flex!important; align-items:baseline; justify-content:flex-end; gap:5px; margin:4px 0 0; font-size:11px; color:var(--muted); }
+.timer-total strong { font-size:13px; font-variant-numeric:tabular-nums; color:var(--ink); }
 .timer-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:8px; }
 .timer .timer-help { max-width:230px; margin:0; text-align:left; font-size:11px; line-height:1.5; color:var(--muted); }
 .timer-actions #stopTimer { margin:0; flex-shrink:0; }
