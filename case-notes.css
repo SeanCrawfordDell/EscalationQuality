@@ -15,6 +15,31 @@
 .history-help { line-height:1.6; margin:14px 0; }
 .backup-location { border-top:1px solid var(--line); margin-top:18px; padding-top:16px; }
 .backup-location .history-help { margin-bottom:0; }
+.backup-location { display:flex; flex-wrap:wrap; gap:8px; }
+.backup-location p { flex-basis:100%; }
+.history>.field { margin-bottom:12px; }
+.case-utilities { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:16px; }
+.case-row-actions { display:flex; flex-wrap:wrap; gap:6px; grid-column:1 / -1; padding-bottom:8px; }
+.case-row-actions button { font-size:12px; padding:6px 10px; min-height:32px; }
+.version-preview { max-height:40vh; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; padding:12px; border:1px solid var(--line); }
+.editor { min-width:0; }
+:where(button,a,input,select,textarea,[contenteditable]):focus-visible { outline:3px solid var(--blue); outline-offset:3px; }
+@media(max-width:1499px), (max-height:779px) {
+  .copy-actions { grid-template-columns:minmax(0,1fr); grid-template-areas:"actions" "toolkit" "devin"; gap:8px; max-height:42vh; overflow:auto; }
+  .copy-actions.floating-disabled { max-height:none; }
+  .copy-actions .toolkit-nav { justify-content:flex-start; }
+  .copy-actions .devin-copy { grid-template-columns:minmax(0,1fr); }
+  .editor :where(input,textarea,select,button,[contenteditable]) { scroll-margin-top:46vh; }
+}
+@media(max-width:650px) { .field-grid { grid-template-columns:minmax(0,1fr); } .hero { flex-wrap:wrap; } .timer { flex-shrink:1; } }
+@media print {
+  body.printing-case > :not(#casePrint) { display:none!important; }
+  body.printing-case { background:#fff!important; color:#000!important; }
+  #casePrint { color:#000; background:#fff; font:12pt/1.5 Arial,sans-serif; }
+  #casePrint img { max-width:100%; height:auto; break-inside:avoid; }
+  #casePrint p { white-space:pre-wrap; overflow-wrap:anywhere; }
+  #casePrint h2 { break-after:avoid; }
+}
 #historyList { max-height:560px; overflow:auto; display:grid; gap:8px; }
 .case-item { text-align:left; cursor:pointer; border:1px solid var(--line); background:var(--input-bg); color:var(--ink); border-radius:8px; padding:12px; width:100%; }
 .case-item[aria-current="true"] { border-color:var(--blue); background:var(--section-number-bg); }

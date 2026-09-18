@@ -3,6 +3,70 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const C = require('../case-notes-core.js');
+test('Export Settings saves latest and dated settings in the configured folder without changing note backups', async () => {
+  const files=new Map();let closed=0;
+  const folder={queryPermission:async()=> 'granted',async getFileHandle(name,options){assert.equal(options.create,true);return {async createWritable(){return {async write(value){files.set(name,value);},async close(){closed++;}};}};}};
+  const h=harness({folder});await new Promise(setImmediate);
+  await h.click('downloadSettings');
+  assert.equal(files.size,2);assert.equal(closed,2);
+  const latest=JSON.parse(files.get('customer-config.json'));
+  assert.ok(latest.fieldConfig);assert.ok(latest.toolbox);assert.ok(latest.preferences);
+  assert.ok([...files.keys()].some(name=>/^customer-config-.+\.json$/.test(name)));
+  assert.ok(![...files.keys()].some(name=>name.startsWith('case-history-')));
+  assert.equal(h.ctx.localStorage.getItem('dell-support.last-backup-at'),null);
+  assert.match(h.get('backupFolderStatus').textContent,/Settings saved to ProSupportToolsBackup/);
+});
+test('Export Settings requests folder access and leaves files untouched when denied', async () => {
+  let requests=0,writes=0;
+  const folder={queryPermission:async()=> 'prompt',requestPermission:async()=>{requests++;return 'denied';},async getFileHandle(){writes++;}};
+  const h=harness({folder});await new Promise(setImmediate);await h.click('downloadSettings');
+  assert.equal(requests,1);assert.equal(writes,0);
+  assert.match(h.get('backupFolderStatus').textContent,/Settings were not exported/);
+});
+test('Export Settings aborts failed writes and allows retry', async () => {
+  let fail=true,aborts=0;
+  const folder={queryPermission:async()=> 'granted',async getFileHandle(){return {async createWritable(){return {async write(){if(fail)throw Error('disk full');},async close(){},async abort(){aborts++;}};}};}};
+  const h=harness({folder});await new Promise(setImmediate);await h.click('downloadSettings');
+  assert.equal(aborts,1);assert.match(h.get('backupFolderStatus').textContent,/did not finish/);
+  fail=false;await h.click('downloadSettings');assert.match(h.get('backupFolderStatus').textContent,/Settings saved/);
+});
+test('Export Settings downloads a file when no backup folder is connected', async () => {
+  const h=harness();const downloads=[];
+  h.ctx.URL={createObjectURL(blob){downloads.push(blob);return 'blob:test';},revokeObjectURL(){}};
+  h.ctx.Blob=Blob;h.ctx.setTimeout=()=>{};
+  h.ctx.document.body={append(link){link.remove=()=>{};}};
+  await h.click('downloadSettings');
+  assert.equal(downloads.length,1);assert.ok(JSON.parse(await downloads[0].text()).toolbox);
+  assert.match(h.get('backupFolderStatus').textContent,/Settings download started/);
+});
+test('automatic folder backups write notes and settings and skip unchanged data', async () => {
+  const files = new Map(); let requests=0;
+  const folder={queryPermission:async()=> 'granted',requestPermission:async()=>{requests++;return 'granted';},async getFileHandle(name){return {async createWritable(){return {async write(value){files.set(name,value);},async close(){}};}};}};
+  const h=harness({folder});await new Promise(setImmediate);
+  h.click('newNote');h.edit('notes','Backup test');await h.click('stopTimer');
+  const backup=h.intervals.find(i=>i.ms===60000).f;await backup();
+  assert.equal(files.size,3);assert.equal(requests,0);
+  assert.ok([...files].some(([name,body])=>name.startsWith('case-history-')&&JSON.parse(body).cases[0].notes==='Backup test'));
+  assert.ok(JSON.parse(files.get('customer-config.json')).preferences.aiTasks);
+  assert.match(h.get('backupFolderStatus').textContent,/Last successful backup/);
+  files.clear();await backup();assert.equal(files.size,0);
+});
+test('automatic folder backups pause without prompting when permission is missing', async () => {
+  let writes=0,requests=0;
+  const folder={queryPermission:async()=> 'prompt',requestPermission:async()=>{requests++;return 'granted';},async getFileHandle(){writes++;throw Error('unexpected write');}};
+  const h=harness({folder});await new Promise(setImmediate);h.click('newNote');
+  await h.intervals.find(i=>i.ms===60000).f();
+  assert.equal(writes,0);assert.equal(requests,0);assert.match(h.get('backupFolderStatus').textContent,/Reconnect Backup Folder/);
+});
+test('failed folder writes report failure and can retry', async () => {
+  let fail=true;
+  const folder={queryPermission:async()=> 'granted',async getFileHandle(){if(fail)throw Error('disk full');return {async createWritable(){return {async write(){},async close(){}};}};}};
+  const h=harness({folder});await new Promise(setImmediate);h.click('newNote');
+  const backup=h.intervals.find(i=>i.ms===60000).f;await backup();
+  assert.match(h.get('backupFolderStatus').textContent,/Automatic backup failed/);
+  assert.match(h.get('backupFolderStatus').textContent,/No successful folder backup yet/);
+  fail=false;await backup();assert.match(h.get('backupFolderStatus').textContent,/Last successful backup/);
+});
 test('history keeps 100 newest cases, stops previous timer, and restores selected case', () => {
   const state = C.empty();
   for(let i=0;i<101;i++) C.create(state,String(i),i*1000);
@@ -21,8 +85,9 @@ test('timestamps survive closure, resume adds time, copy includes every field an
   assert.ok(text.includes('First line\nSecond line'));assert.ok(text.endsWith('00:00:15'));
   assert.throws(()=>C.parse('{bad'));assert.throws(()=>C.parse('{"version":2}'));
 });
-function harness({writeError=false,copyError=false,locked=false}={}) {
+function harness({writeError=false,copyError=false,locked=false,folder=null}={}) {
   const elements={}, intervals=[], events={};let stored=null, now=1000;
+  const preferences = new Map();
   function element(){
     const el={
       options:[],_children:[],
@@ -34,7 +99,8 @@ function harness({writeError=false,copyError=false,locked=false}={}) {
       },
       value:'',_innerHTML:'',
       get innerHTML(){return this._innerHTML},set innerHTML(v){this._innerHTML=v;if(v==='')this._children=[]},
-      hidden:false,disabled:false,textContent:'',className:'',
+      hidden:false,disabled:false,textContent:'',className:'',open:false,clickCount:0,
+      showModal(){this.open=true;},close(){this.open=false;},click(){this.clickCount++;this.listeners.click?.();},
       classList:{toggle(){}},listeners:{},setAttribute(){},
       append(...items){for(const item of items)this._children.push(item)},
       appendChild(item){this._children.push(item);return item},
@@ -59,9 +125,53 @@ function harness({writeError=false,copyError=false,locked=false}={}) {
   }
   get('fields').querySelector=sel=>sel==='.field-grid'?fieldGrid:null;
   const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){events[k]=f}},window:{addEventListener(k,f){events[k]=f}},localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,f){if(!locked)return f();return new Promise(()=>{})}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
+  ctx.CaseSettings = require('../case-settings-core.js');
+  ctx.localStorage = {
+    getItem(k){return k==='dell-support.case-notes.v1' ? stored : preferences.get(k) ?? null;},
+    setItem(k,v){if(writeError)throw Error('full');if(k==='dell-support.case-notes.v1')stored=v;else preferences.set(k,v);},
+    removeItem(k){preferences.delete(k);}
+  };
+  if (folder) {
+    ctx.window.showDirectoryPicker=async()=>folder;
+    ctx.indexedDB={open(){
+      const request={};
+      queueMicrotask(()=>{
+        request.result={close(){},transaction(){
+          const transaction={objectStore(){return {get(){return {result:folder};}};}};
+          queueMicrotask(()=>transaction.oncomplete());return transaction;
+        }};
+        request.onsuccess();
+      });return request;
+    }};
+  }
   vm.runInNewContext(fs.readFileSync(require.resolve('../case-notes.js'),'utf8'),ctx);
   return {get,events,intervals,ctx,setTime:n=>now=n,stored:()=>stored,failWrite:v=>writeError=v,click:id=>get(id).listeners.click(),edit(id,value){get(id).value=value;get('noteForm').listeners.input({target:{id,value}})}};
 }
+test('one restore settings entry offers file selection and disables an unconnected folder',()=>{
+  const h=harness();const before=h.stored();h.click('restoreSettings');
+  assert.equal(h.get('restoreSettingsDialog').open,true);
+  assert.equal(h.get('restoreSettingsFromFolder').disabled,true);
+  assert.match(h.get('restoreSettingsFolderHint').textContent,/No backup folder connected/);
+  h.click('cancelRestoreSettings');assert.equal(h.get('restoreSettingsDialog').open,false);
+  assert.equal(h.stored(),before);
+  h.click('restoreSettings');h.click('restoreSettingsFromFile');
+  assert.equal(h.get('restoreSettingsDialog').open,false);assert.equal(h.get('settingsFile').clickCount,1);
+  const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
+  assert.equal((html.match(/id="restoreSettings"/g)||[]).length,1);assert.ok(!html.includes('id="importSettings"'));
+});
+test('restore settings folder choice uses the connected folder and retains error feedback',async()=>{
+  let requested;
+  const folder={queryPermission:async()=> 'granted',async getFileHandle(name){requested=name;throw Error('Settings backup missing');}};
+  const h=harness({folder});await new Promise(setImmediate);h.click('restoreSettings');
+  assert.equal(h.get('restoreSettingsFromFolder').disabled,false);
+  await h.click('restoreSettingsFromFolder');assert.equal(requested,'customer-config.json');
+  assert.equal(h.get('restoreSettingsDialog').open,false);
+  assert.match(h.get('backupFolderStatus').textContent,/Settings backup missing/);
+});
+test('read-only case tabs cannot open restore settings or choose a file',()=>{
+  const h=harness({locked:true});h.click('restoreSettings');h.click('restoreSettingsFromFile');
+  assert.equal(h.get('restoreSettingsDialog').open,false);assert.equal(h.get('settingsFile').clickCount,0);
+});
 test('autosave, copying, editing after copy, and save failure recovery',async()=>{
   const h=harness();h.click('newNote');h.edit('notes','Investigation');
   assert.equal(h.get('saveStatus').textContent,'Unsaved changes');

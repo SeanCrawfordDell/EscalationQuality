@@ -44,6 +44,10 @@
     });
   });
   system.addEventListener("change", apply);
+  window.addEventListener("supportSettingsRestored", () => {
+    try { preference = valid(localStorage.getItem("theme")); } catch {}
+    apply();
+  });
   window.addEventListener("storage", event => {
     if (event.key === "theme" || event.key === null) {
       preference = valid(event.newValue);

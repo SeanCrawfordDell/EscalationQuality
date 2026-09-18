@@ -15,6 +15,7 @@
   <script src="case-markdown.js" defer></script>
   <script src="case-toolkit-core.js" defer></script>
   <script src="case-notes-core.js" defer></script>
+  <script src="case-settings-core.js" defer></script>
   <script src="devin-prompt-core.js" defer></script>
   <script src="case-toolkit.js" defer></script>
   <link rel="stylesheet" href="log-helper.css">
@@ -36,11 +37,19 @@
     <div class="case-work-area" id="caseWorkArea">
     <button class="button secondary" id="toggleHistory" type="button" aria-controls="caseHistory" aria-expanded="true">Hide Recent Cases</button>
     <div class="notes-layout" id="notesLayout">
-      <aside class="panel history" id="caseHistory" aria-label="Case history"><div class="history-heading"><h2>Recent cases</h2><span id="caseCount">0 / 100</span></div><label class="field">Search cases<input id="search" type="search" placeholder="Tag, request, or issue"></label><label class="field history-filter">Show cases<select id="followupFilter"><option value="all">All cases</option><option value="overdue">Overdue follow-ups</option><option value="active">Active cases</option><option value="completed">Completed cases</option></select></label><p class="history-help">Newest first · Last 100 cases</p><div id="historyList"></div><div class="history-backup"><button class="button secondary" id="backupHistory" disabled>Backup History</button><button class="button secondary" id="restoreHistory" disabled>Restore History</button><input id="restoreFile" type="file" accept=".json,application/json" hidden><p id="backupStatus" role="status"></p></div><div class="backup-location"><button class="button secondary" id="chooseBackupFolder" type="button">Set Backup Folder</button><button class="button secondary" id="restoreSettings" type="button">Restore Settings</button><p id="backupFolderStatus" class="history-help" role="status">Choose a OneDrive-synced Documents folder. Case Notes will create <strong>ProSupportToolsBackup</strong> there for customer configuration and note backups.</p></div><p class="history-help">Saved only in this browser until a backup folder is set. Clearing browser data removes local history.</p></aside>
+      <aside class="panel history" id="caseHistory" aria-label="Case history"><div class="history-heading"><h2>Recent cases</h2><span id="caseCount">0 / 100</span></div><label class="field">Search cases<input id="search" type="search" placeholder="Search all notes and custom fields"></label><label class="field history-filter">Show cases<select id="followupFilter"><option value="all">All cases</option><option value="overdue">Overdue follow-ups</option><option value="active">Active cases</option><option value="completed">Completed cases</option></select></label><label class="field">Collection<select id="caseCollection"><option value="cases">Recent cases</option><option value="archive">Archive</option><option value="trash">Trash</option></select></label>
+<label class="field">Sort by<select id="caseSort"><option value="created">Newest created</option><option value="updated">Recently edited</option><option value="due">Follow-up due</option></select></label>
+<p class="history-help">Pinned cases first. Older cases move to Archive after 100 recent cases. Trash is kept until you permanently delete it.</p><div id="historyList"></div><div class="history-backup"><button class="button secondary" id="backupHistory" disabled>Backup History</button><button class="button secondary" id="restoreHistory" disabled>Restore History</button><input id="restoreFile" type="file" accept=".json,application/json" hidden><p id="backupStatus" role="status"></p></div><div class="backup-location"><button class="button secondary" id="chooseBackupFolder" type="button">Set Backup Folder</button><button class="button secondary" id="reconnectBackup" type="button">Reconnect Backup Folder</button><button class="button secondary" id="downloadSettings" type="button">Export Settings</button><input id="settingsFile" type="file" accept=".json,application/json" hidden><button class="button secondary" id="restoreSettings" type="button" aria-haspopup="dialog">Restore Settings</button><p id="backupFolderStatus" class="history-help" role="status">Choose a OneDrive-synced Documents folder. Case Notes will create <strong>ProSupportToolsBackup</strong> there for customer configuration and note backups.</p></div><p class="history-help">Notes autosave in this browser. With folder access approved, automatic backups run every minute when changes are present while this page is open. Clearing browser data removes local history.</p></aside>
       <section class="panel editor">
         <div id="welcome"><div class="empty-icon">✎</div><h2>A clear record starts here</h2><p>Start a note to begin tracking time and capturing your case.</p><button class="button primary" id="startNote" disabled>Start New Note</button></div>
         <div id="noteEditor" hidden>
           <div class="editor-heading"><div><div class="workspace-title"><p class="eyebrow">CASE WORKSPACE</p><span>Time Tracking Automatically Starts When Notes are Started or Modified</span></div><span id="saveStatus" role="status">Saved</span><button id="retrySave" class="button secondary" hidden>Retry save</button></div><div class="timer"><span id="timerState">Tracking time</span><strong id="elapsed">00:00:00</strong><span class="timer-total">Total time on case <strong id="totalElapsed">00:00:00</strong></span><div class="timer-actions"><span class="timer-help">Time Tracking Stops When the Copy to Lightning Button is Clicked</span><button class="button secondary" id="stopTimer" type="button" disabled>Stop Time Tracking</button></div></div></div>
+          <div class="case-utilities" role="group" aria-label="Case recovery and export">
+            <button class="button secondary" id="caseVersions" type="button">Version History</button>
+            <button class="button secondary" id="exportCase" type="button">Export This Case</button>
+            <button class="button secondary" id="exportCaseJson" type="button">Export Case JSON</button>
+            <button class="button secondary" id="printCase" type="button">Print / PDF</button>
+          </div>
           <form id="noteForm"><fieldset id="fields" disabled>
             <section class="note-section" id="caseDetailsSection"><button type="button" class="section-toggle" id="caseDetailsToggle" aria-expanded="true" aria-controls="caseDetailsGrid"><span class="section-arrow" aria-hidden="true">▾</span><span>Case Details</span></button><div class="field-grid section-content" id="caseDetailsGrid">
             <label class="field">Service Tag<input id="tag" autocomplete="off"></label>
@@ -98,6 +107,25 @@
 </div>
 <p id="aiTasksStatus" role="status"></p>
 </dialog>
+<dialog id="caseRecovery" class="toolkit-dialog" aria-labelledby="caseRecoveryTitle">
+  <h2 id="caseRecoveryTitle">Version History</h2>
+  <p>Up to ten previous saved versions per case. Restoring a version keeps a copy of the current version.</p>
+  <div id="caseVersionList"></div>
+  <pre id="caseVersionPreview" class="version-preview"></pre>
+  <p id="caseRecoveryStatus" role="status"></p>
+  <button class="button secondary" id="closeCaseRecovery" type="button">Close</button>
+</dialog>
+<dialog id="restoreSettingsDialog" class="toolkit-dialog" aria-labelledby="restoreSettingsTitle" aria-describedby="restoreSettingsHelp">
+  <h2 id="restoreSettingsTitle">Restore Settings</h2>
+  <p id="restoreSettingsHelp">Choose where to restore your settings from. You will review a confirmation before settings are replaced. Case notes are kept.</p>
+  <div class="backup-location">
+    <button class="button" id="restoreSettingsFromFolder" type="button" aria-describedby="restoreSettingsFolderHint">From backup folder</button>
+    <button class="button secondary" id="restoreSettingsFromFile" type="button">Choose a file</button>
+  </div>
+  <p id="restoreSettingsFolderHint" class="history-help"></p>
+  <button class="button secondary" id="cancelRestoreSettings" type="button">Cancel</button>
+</dialog>
+<div id="casePrint" hidden></div>
 <dialog id="fieldCustomizer" class="field-customizer-dialog" aria-labelledby="customizerTitle">
 <div class="customizer-heading"><h2 id="customizerTitle">Customize Case Fields</h2><button class="button secondary" id="closeCustomizer" type="button">Close</button></div>
 <p class="customizer-help">Add custom fields and reorder all fields. Built-in fields are protected for escalation compatibility but can be reordered.</p>

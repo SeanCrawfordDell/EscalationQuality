@@ -52,7 +52,7 @@
   const buttonId = button => button.dataset.toolboxAction || button.dataset.shortcutId || 'edit';
   function paint(button, id) {
     const color = preferences.colors[id];
-    if (!/^#[0-9a-f]{6}$/i.test(color || '')) return;
+    if (!/^#[0-9a-f]{6}$/i.test(color || '')) { button.style.background = ''; button.style.color = ''; return; }
     button.style.background = color;
     const rgb = [1,3,5].map(start => parseInt(color.slice(start,start+2),16) / 255).map(v => v <= .04045 ? v/12.92 : ((v+.055)/1.055)**2.4);
     button.style.color = rgb[0]*.2126 + rgb[1]*.7152 + rgb[2]*.0722 > .179 ? '#000000' : '#ffffff';

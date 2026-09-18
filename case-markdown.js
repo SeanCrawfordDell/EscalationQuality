@@ -95,10 +95,11 @@ window.CaseMarkdown = (() => {
       api.update(field, serialize(field), { ...api.current().images });
     });
   }
-  function emailHtml(note, now) {
+  function emailHtml(note, now, fieldConfig = null, inlineImages = false) {
     const body = document.createElement("div");
     const images = {};
-    Object.entries(CaseNotes.fields).forEach(([field, label]) => {
+    const exportFields = fieldConfig ? CaseNotes.getEffectiveFields({fieldConfig}).map(({id,label}) => [id,label]) : Object.entries(CaseNotes.fields);
+    exportFields.forEach(([field, label]) => {
       const heading = document.createElement("h2"); heading.textContent = label;
       heading.setAttribute("style", "font-size:16px;margin:24px 0 8px;color:#163247");
       body.append(heading);
@@ -108,7 +109,7 @@ window.CaseMarkdown = (() => {
           const pair = Object.entries(note.images || {}).find(([, image]) => image.data === img.getAttribute("src"));
           if (!pair) { img.replaceWith(document.createTextNode("[Screenshot]")); return; }
           const [id, image] = pair; images[id] = image;
-          img.setAttribute("src", `cid:${id}@case-notes`);
+          img.setAttribute("src", inlineImages ? image.data : `cid:${id}@case-notes`);
           img.setAttribute("style", "max-width:100%;height:auto;display:block;margin:12px 0");
         });
         body.append(content);

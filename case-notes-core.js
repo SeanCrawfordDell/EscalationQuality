@@ -4,7 +4,7 @@ const CaseNotes = (() => {
   const Toolkit = typeof module !== "undefined" ? require("./case-toolkit-core.js") : CaseToolkitCore;
   const fields = { tag: "Service Tag", platform: "System/Platform", request: "Service Request Number", os: "OS/Solution", osVersion: "OS version / build", country: "Customer Country", supportType: "OS Support", logLocation: "Log Location", issue: "Issue Description", notes: "Notes", next: "Action Plan / Next Steps" };
   const defaultFieldOrder = Object.keys(fields);
-  const empty = () => ({ version: 2, selected: null, cases: [], fieldConfig: { order: [...defaultFieldOrder], customFields: {} } });
+  const empty = () => ({ version: 2, selected: null, cases: [], archive: [], trash: [], revisions: {}, fieldConfig: { order: [...defaultFieldOrder], customFields: {} } });
   const elapsed = (note, now) => note.elapsed + (note.started === null ? 0 : Math.max(0, now - note.started));
   const lastSession = (note, now) => note.started === null ? (note.lastSession || 0) : Math.max(0, now - note.started);
   function stop(note, now) {
@@ -21,7 +21,7 @@ const CaseNotes = (() => {
     const fieldConfig = state.fieldConfig || { order: [...defaultFieldOrder], customFields: {} };
     const allFields = { ...fields, ...fieldConfig.customFields };
     const note = { toolkit: Toolkit.defaults(), id, created: now, updated: now, elapsed: 0, started: now, lastSession: 0, ...Object.fromEntries(Object.keys(allFields).map(key => [key, ""])) };
-    state.cases.unshift(note); state.cases = state.cases.slice(0, 100); state.selected = id;
+    state.cases.unshift(note); trimWorkingList(state, now); state.selected = id;
     return note;
   }
   function duration(ms) {
@@ -82,6 +82,50 @@ const CaseNotes = (() => {
     snapshot.cases.forEach(note => stop(note, now));
     return JSON.stringify(snapshot, null, 2);
   }
+  function trimWorkingList(state, now) {
+    state.archive ||= [];
+    while (state.cases.length > 100) {
+      let index = state.cases.findLastIndex(note => !note.pinned);
+      if (index <= 0) index = state.cases.length - 1;
+      const [note] = state.cases.splice(index, 1);
+      stop(note, now); state.archive.unshift(note);
+    }
+  }
+  function move(state, id, from, to, now) {
+    if (!["cases", "archive", "trash"].includes(from) || !["cases", "archive", "trash"].includes(to) || from === to) throw Error("Invalid case move");
+    state[from] ||= []; state[to] ||= [];
+    const index = state[from].findIndex(note => note.id === id);
+    if (index < 0) throw Error("Case not found");
+    const [note] = state[from].splice(index, 1);
+    stop(note, now);
+    if (to === "trash") note.deletedAt = now; else delete note.deletedAt;
+    state[to].unshift(note);
+    if (to === "cases") { trimWorkingList(state, now); state.selected = id; }
+    else if (state.selected === id) state.selected = state.cases[0]?.id || null;
+    return note;
+  }
+  const contentSignature = note => JSON.stringify(Object.fromEntries(Object.entries(note).filter(([key]) => !["started", "elapsed", "lastSession", "updated", "pinned", "deletedAt"].includes(key))));
+  function checkpoint(state, previous, now) {
+    state.revisions ||= {};
+    const current = new Map(state.cases.map(note => [note.id, note]));
+    for (const before of previous?.cases || []) {
+      const after = current.get(before.id);
+      if (!after || contentSignature(before) === contentSignature(after)) continue;
+      const versions = state.revisions[before.id] ||= [];
+      const snapshot = JSON.parse(JSON.stringify(before)); stop(snapshot, now);
+      versions.unshift({ savedAt: now, note: snapshot });
+      state.revisions[before.id] = versions.slice(0, 10);
+    }
+  }
+  function searchText(note) {
+    return [...Object.entries(note).filter(([key,value]) => key !== "id" && typeof value === "string").map(([,value]) => value), ...Object.values(note.toolkit || {}).filter(value => typeof value === "string")].map(plainImages).join("\n");
+  }
+  function excerpt(note, query) {
+    const text = searchText(note).replace(/\s+/g, " ");
+    const at = text.toLowerCase().indexOf(query.toLowerCase());
+    const start = Math.max(0, at - 40);
+    return (start ? "…" : "") + text.slice(start, start + 160) + (text.length > start + 160 ? "…" : "");
+  }
   function escalation(note, now, fieldConfig = null) {
     const config = fieldConfig || { order: [...defaultFieldOrder], customFields: {} };
     const customFieldsData = {};
@@ -92,18 +136,29 @@ const CaseNotes = (() => {
       osVersion: note.osVersion || "", serviceRequest: note.request, platform: note.platform || "", supportType: note.supportType || "", logLocation: note.logLocation || "", impact: note.toolkit?.impact || "", checks: note.toolkit?.checks || {}, issueType: note.toolkit?.issueType || "general",
       troubleshooting: plainImages(note.notes), nextSteps: plainImages(note.next), sourceNote: copyText(note, now, config), customFields: customFieldsData };
   }
-  function parse(raw) {
+  function parse(raw, nested = false) {
     if (raw === null) return empty();
     const state = JSON.parse(raw);
+    if (!state || typeof state !== "object" || Array.isArray(state)) throw Error("Invalid history");
     if (state.version === 1) {
       state.version = 2;
       state.fieldConfig = { order: [...defaultFieldOrder], customFields: {} };
     }
     if (state.version !== 2 || !Array.isArray(state.cases) || state.cases.length > 100) throw Error("Invalid history");
     if (!state.fieldConfig) state.fieldConfig = { order: [...defaultFieldOrder], customFields: {} };
+    const config = state.fieldConfig;
+    const reserved = new Set(["__proto__", "constructor", "prototype", "id", "created", "updated", "started", "elapsed", "lastSession", "images", "toolkit", "pinned", "deletedAt"]);
+    if (!config.customFields || typeof config.customFields !== "object" || Array.isArray(config.customFields) || !Array.isArray(config.order)) throw Error("Invalid field configuration");
+    for (const [id,label] of Object.entries(config.customFields)) {
+      if (!/^[a-zA-Z0-9_-]+$/.test(id) || reserved.has(id) || Object.hasOwn(fields,id) || typeof label !== "string" || !label.trim()) throw Error("Invalid custom field");
+    }
+    const allowedFields = [...Object.keys(fields), ...Object.keys(config.customFields)];
+    if (new Set(config.order).size !== config.order.length || config.order.some(id => !allowedFields.includes(id))) throw Error("Invalid field order");
+    config.order.push(...allowedFields.filter(id => !config.order.includes(id)));
     const ids = new Set(); let running = 0;
     const allFields = { ...fields, ...state.fieldConfig.customFields };
     for (const note of state.cases) {
+      if (note && reserved.has(note.id)) throw Error("Invalid case ID");
       // Older saved cases predate these optional fields; retain all existing data.
       if (note && typeof note === "object") {
         for (const key of ["os", "country", "supportType", "logLocation", "platform", "osVersion"]) {
@@ -123,11 +178,34 @@ const CaseNotes = (() => {
       ids.add(note.id); if (note.started !== null) running++;
     }
     if (running > 1 || !(state.selected === null || ids.has(state.selected))) throw Error("Invalid selection");
+    if (!nested) {
+      for (const collection of ["archive", "trash"]) {
+        state[collection] ||= [];
+        if (!Array.isArray(state[collection])) throw Error("Invalid saved collection");
+        state[collection] = state[collection].map(note => {
+          const valid = parse(JSON.stringify({ version:2, cases:[note], selected:null, fieldConfig:state.fieldConfig }), true).cases[0];
+          if (ids.has(valid.id)) throw Error("Duplicate case");
+          ids.add(valid.id); valid.started = null; return valid;
+        });
+      }
+      state.revisions ||= {};
+      if (typeof state.revisions !== "object" || Array.isArray(state.revisions)) throw Error("Invalid versions");
+      for (const [id, versions] of Object.entries(state.revisions)) {
+        if (reserved.has(id) || !ids.has(id)) throw Error("Invalid version case ID");
+        if (!Array.isArray(versions) || versions.length > 10) throw Error("Invalid versions");
+        versions.forEach(version => {
+          if (!version || !Number.isFinite(version.savedAt) || version.note?.id !== id) throw Error("Invalid version");
+          version.note = parse(JSON.stringify({version:2, cases:[version.note], selected:null, fieldConfig:state.fieldConfig}), true).cases[0];
+          version.note.started = null;
+        });
+      }
+    }
     state.cases.sort((a, b) => b.created - a.created);
     return state;
   }
   function addCustomField(state, fieldId, fieldLabel) {
     if (!/^[a-zA-Z0-9_-]+$/.test(fieldId)) throw Error("Invalid field ID");
+    if (["id","created","updated","started","elapsed","lastSession","images","toolkit","pinned","deletedAt","__proto__","constructor","prototype"].includes(fieldId)) throw Error("Reserved field ID");
     if (fields[fieldId] || state.fieldConfig.customFields[fieldId]) throw Error("Field already exists");
     state.fieldConfig.customFields[fieldId] = fieldLabel;
     state.fieldConfig.order.push(fieldId);
@@ -156,6 +234,6 @@ const CaseNotes = (() => {
     const allFields = { ...fields, ...state.fieldConfig.customFields };
     return state.fieldConfig.order.filter(key => allFields[key]).map(key => ({ id: key, label: allFields[key] }));
   }
-  return { fields, defaultFieldOrder, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, reorderFields, getEffectiveFields };
+  return { fields, defaultFieldOrder, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, reorderFields, getEffectiveFields, move, checkpoint, searchText, excerpt, trimWorkingList };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;
