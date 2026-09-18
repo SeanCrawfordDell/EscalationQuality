@@ -6,6 +6,7 @@
   <meta name="description" content="Dell Pro-Support Technical Support Assistant: a central workspace for technical support tools and escalation readiness.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self';">
   <script src="theme.js"></script>
+  <script defer src="landing.js"></script>
   <title>Dell Pro-Support Technical Support Assistant</title>
   <link rel="stylesheet" href="landing.css">
   <link rel="stylesheet" href="theme.css">
@@ -13,7 +14,13 @@
 <body>
   <a class="skip-link" href="#tools">Skip to tools</a>
   <header class="header">
-    <a class="brand" href="index.html" aria-label="Dell Pro-Support home"><span class="dell">DELL</span><span class="brand-divider"></span><span>Pro-Support</span></a><div class="theme-controls" role="group" aria-label="Appearance">
+    <a class="brand" href="index.html" aria-label="Dell Pro-Support home"><span class="dell">DELL</span><span class="brand-divider"></span><span>Pro-Support</span></a>
+    <nav class="primary-nav" aria-label="Primary navigation">
+      <a href="#knowledge">Knowledge</a>
+      <a href="#ai-resources">AI Resources</a>
+      <a href="#training">Training</a>
+    </nav>
+    <div class="theme-controls" role="group" aria-label="Appearance">
         <button class="theme-switch" id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button>
       </div>
   </header>
@@ -35,8 +42,16 @@
       </div>
     </section>
     <section class="tools" id="tools" aria-labelledby="tools-title">
-      <div class="section-header"><div><p class="eyebrow">YOUR TOOLKIT</p><h2 id="tools-title">The right tool. The next step.</h2><p>Purpose-built assistance for your support workflow.</p></div><span class="count">5 tools available</span></div>
-      <div class="tool-grid">
+      <div class="section-header"><div><p class="eyebrow">YOUR TOOLKIT</p><h2 id="tools-title">The right tool. The next step.</h2><p>Purpose-built assistance for your support workflow.</p></div><span class="count" id="toolCount">5 tools available</span></div>
+      <div class="catalog-controls">
+        <label class="search-field" for="toolSearch"><span class="visually-hidden">Search tools</span><span aria-hidden="true">⌕</span><input id="toolSearch" type="search" placeholder="Search tools" autocomplete="off"></label>
+        <div class="view-switcher" role="group" aria-label="Tool catalog view">
+          <button class="view-button is-selected" id="gridView" type="button" aria-pressed="true">Grid</button>
+          <button class="view-button" id="listView" type="button" aria-pressed="false">List</button>
+        </div>
+      </div>
+      <p class="no-results" id="noResults" hidden>No tools match your search.</p>
+      <div class="tool-grid" id="toolGrid">
         <a class="tool-card active" href="escalation-quality.html">
           <div class="card-top"><span class="tool-icon"><svg viewBox="0 0 32 32" aria-hidden="true" fill="currentColor"><path d="M12 4h8v8h8v8h-8v8h-8v-8H4v-8h8z"/></svg></span><span class="badge">Available</span></div>
           <p class="category">ESCALATION READINESS</p><h3>DE Escalation Request</h3><p>Review your escalation before the handoff. Check for missing details, assess readiness, and give senior technicians the context they need.</p>
@@ -63,6 +78,11 @@
           <div class="tags"><span>Tool catalog</span><span>Opens in a new tab</span></div><div class="card-action">Open Tools Catalog <span aria-hidden="true">↗</span></div>
         </a>
       </div>
+    </section>
+    <section class="resource-hub" aria-label="Support resources">
+      <article id="knowledge"><p class="eyebrow">KNOWLEDGE</p><h2>Find the right guidance.</h2><p>Open a tool to find its instructions, practical guidance, and support context.</p><a href="#tools">Browse tools <span aria-hidden="true">→</span></a></article>
+      <article id="ai-resources"><p class="eyebrow">AI RESOURCES</p><h2>Use AI with your case context.</h2><p>Case Notes includes AI-assisted summaries and reviews to help you build a stronger handoff.</p><a href="case-notes.html">Open Case Notes <span aria-hidden="true">→</span></a></article>
+      <article id="training"><p class="eyebrow">TRAINING</p><h2>Practice the escalation workflow.</h2><p>Use the escalation readiness tool to learn the details that make a handoff actionable.</p><a href="escalation-quality.html">Start with escalation readiness <span aria-hidden="true">→</span></a></article>
     </section>
     <section class="workflow" aria-label="Support workflow"><p>Better preparation.<br><strong>Stronger support.</strong></p><div><span>01</span><h3>Choose your tool</h3><p>Start with the task at hand.</p></div><div><span>02</span><h3>Build the context</h3><p>Bring the details that matter.</p></div><div><span>03</span><h3>Move forward</h3><p>Put clear, actionable feedback to work.</p></div></section>
   </main>
