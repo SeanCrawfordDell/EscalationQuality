@@ -99,7 +99,17 @@
   }
   async function writeBackupToFolder(text, fileName) {
     if (!backupFolderHandle || !await ensureBackupFolderPermission()) return false;
-    const config = JSON.stringify({ exportedAt:new Date().toISOString(), fieldConfig:state.fieldConfig }, null, 2);
+    const storedJson = (storageKey, fallback) => {
+      try { return JSON.parse(localStorage.getItem(storageKey) || JSON.stringify(fallback)); } catch { return fallback; }
+    };
+    const config = JSON.stringify({
+      exportedAt:new Date().toISOString(),
+      fieldConfig:state.fieldConfig,
+      toolbox:{
+        shortcuts:storedJson("dell-support.toolbox-links.v1", []),
+        appearance:storedJson("dell-support.toolbox-appearance.v1", { order:[], colors:{} })
+      }
+    }, null, 2);
     const configWriter = await (await backupFolderHandle.getFileHandle("customer-config.json", { create:true })).createWritable();
     await configWriter.write(config); await configWriter.close();
     const backupWriter = await (await backupFolderHandle.getFileHandle(fileName, { create:true })).createWritable();
