@@ -12,6 +12,7 @@
   function setHistoryCollapsed(collapsed) {
     $("caseHistory").hidden = collapsed;
     $("notesLayout").classList.toggle("history-collapsed", collapsed);
+    actionDock?.classList.toggle("workspace-width", !collapsed);
     $("toggleHistory").setAttribute("aria-expanded", String(!collapsed));
     $("toggleHistory").textContent = collapsed ? "Show Recent Cases" : "Hide Recent Cases";
   }
