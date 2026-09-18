@@ -15,6 +15,7 @@
     toggleHistory: "Show or hide the list of saved case notes.",
     backupHistory: "Save a backup of all case notes and customer configuration.",
     chooseBackupFolder: "Choose a OneDrive-synced Documents folder for ProSupportToolsBackup.",
+    restoreSettings: "Restore field and toolbox settings from customer-config.json.",
     restoreHistory: "Restore case notes from a backup file.",
     stopTimer: "Stop time tracking for the current case.",
     emailNote: "Download the case notes as an email draft with screenshots.",
@@ -41,6 +42,7 @@
   }
   addButtonTooltips();
   const backupFolderButton = $("chooseBackupFolder");
+  const restoreSettingsButton = $("restoreSettings");
   const backupFolderStatus = $("backupFolderStatus");
   const backupFolderDbName = "dell-support.case-notes.backup-folder";
   let backupFolderHandle = null;
@@ -116,7 +118,45 @@
     await backupWriter.write(text); await backupWriter.close();
     return true;
   }
+  function normalizeRestoredFieldConfig(config) {
+    if (!config || typeof config !== "object" || !config.fieldConfig || typeof config.fieldConfig !== "object") throw Error("The backup does not contain a valid customer configuration.");
+    const customFields = {};
+    for (const [id, label] of Object.entries(config.fieldConfig.customFields || {})) {
+      if (/^[A-Za-z0-9_-]+$/.test(id) && !CaseNotes.fields[id] && typeof label === "string" && label.trim()) customFields[id] = label.trim().slice(0, 120);
+    }
+    const allowed = new Set([...CaseNotes.defaultFieldOrder, ...Object.keys(customFields)]);
+    const order = [];
+    for (const id of config.fieldConfig.order || []) if (allowed.has(id) && !order.includes(id)) order.push(id);
+    for (const id of CaseNotes.defaultFieldOrder) if (!order.includes(id)) order.push(id);
+    for (const id of Object.keys(customFields)) if (!order.includes(id)) order.push(id);
+    return { order, customFields };
+  }
+  async function restoreSettings() {
+    if (!backupFolderHandle) {
+      setBackupFolderStatus("Set the backup folder first, then restore customer-config.json from ProSupportToolsBackup.");
+      return;
+    }
+    try {
+      if (!await ensureBackupFolderPermission()) throw Error("Folder access was not approved.");
+      const file = await (await backupFolderHandle.getFileHandle("customer-config.json")).getFile();
+      const config = JSON.parse(await file.text());
+      const fieldConfig = normalizeRestoredFieldConfig(config);
+      if (!confirm("Restore field settings and toolbox customizations from the selected backup folder? Current settings will be replaced.")) return;
+      state.fieldConfig = fieldConfig;
+      state.cases.forEach(note => Object.keys(fieldConfig.customFields).forEach(id => { if (!Object.hasOwn(note, id)) note[id] = ""; }));
+      if (config.toolbox && typeof config.toolbox === "object") {
+        localStorage.setItem("dell-support.toolbox-links.v1", JSON.stringify(config.toolbox.shortcuts || []));
+        localStorage.setItem("dell-support.toolbox-appearance.v1", JSON.stringify(config.toolbox.appearance || { order:[], colors:{} }));
+        window.dispatchEvent(new Event("prosSupportToolboxRestore"));
+      }
+      dirty = true; save(); render();
+      setBackupFolderStatus("Settings restored from ProSupportToolsBackup, including field configuration and toolbox customizations.");
+    } catch (error) {
+      setBackupFolderStatus(error?.message || "Could not restore settings. Confirm customer-config.json exists in ProSupportToolsBackup.");
+    }
+  }
   backupFolderButton?.addEventListener("click", chooseBackupFolder);
+  restoreSettingsButton?.addEventListener("click", restoreSettings);
   restoreBackupFolder();
   const actionDockPreferenceKey = "dell-support.case-notes.action-dock-floating";
   const actionDockToggle = $("toggleActionDock");

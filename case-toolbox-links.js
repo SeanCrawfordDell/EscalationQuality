@@ -40,7 +40,11 @@
   }, 10000);
   const preferencesKey = 'dell-support.toolbox-appearance.v1';
   let preferences = {order:[], colors:{}};
-  try { const saved = JSON.parse(localStorage.getItem(preferencesKey)); if (saved && Array.isArray(saved.order) && saved.colors && typeof saved.colors === 'object') preferences = saved; } catch {}
+  function loadPreferences() {
+    preferences = {order:[], colors:{}};
+    try { const saved = JSON.parse(localStorage.getItem(preferencesKey)); if (saved && Array.isArray(saved.order) && saved.colors && typeof saved.colors === 'object') preferences = saved; } catch {}
+  }
+  loadPreferences();
   function savePreferences() {
     try { localStorage.setItem(preferencesKey, JSON.stringify(preferences)); }
     catch { status.textContent = 'Changes apply for this session, but browser storage could not save them.'; }
@@ -111,7 +115,11 @@
   radial.addEventListener('click', event => { if(suppressClick) { event.preventDefault(); event.stopImmediatePropagation(); suppressClick=false; } },true);
   const safeUrl = value => { try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password ? url.href : null; } catch { return null; } };
   let links = [];
-  try { const saved = JSON.parse(localStorage.getItem(key) || '[]'); if (Array.isArray(saved)) links = saved.filter(link => typeof link.name === 'string' && safeUrl(link.url)).slice(0, 4); } catch {}
+  function loadLinks() {
+    links = [];
+    try { const saved = JSON.parse(localStorage.getItem(key) || '[]'); if (Array.isArray(saved)) links = saved.filter(link => typeof link.name === 'string' && safeUrl(link.url)).slice(0, 4); } catch {}
+  }
+  loadLinks();
   function save(next) {
     try { localStorage.setItem(key, JSON.stringify(next)); links = next; render(); return true; }
     catch { status.textContent = 'Could not save shortcuts. Check browser storage access and try again.'; return false; }
@@ -154,5 +162,6 @@
   });
   document.getElementById('closeToolboxEditor').addEventListener('click', () => editor.close());
   editor.addEventListener('close', () => document.getElementById('toolboxLauncher').focus());
+  window.addEventListener('prosSupportToolboxRestore', () => { loadPreferences(); loadLinks(); render(); });
   render();
 })();
