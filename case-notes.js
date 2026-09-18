@@ -7,6 +7,38 @@
   const actionDock = document.getElementById("copyActions");
   const caseWorkArea = $("caseWorkArea");
   if (caseWorkArea?.prepend && actionDock) caseWorkArea.prepend(actionDock);
+  const buttonTooltips = {
+    newNote: "Start a blank case note and begin time tracking.",
+    loadExampleNote: "Load a sample case note you can safely explore.",
+    tutorialDemo: "See a guided tour of Case Notes and the toolbox.",
+    customizeFields: "Choose which case fields appear and their order.",
+    toggleHistory: "Show or hide the list of saved case notes.",
+    backupHistory: "Download a backup of all saved case notes.",
+    restoreHistory: "Restore case notes from a backup file.",
+    stopTimer: "Stop time tracking for the current case.",
+    emailNote: "Download the case notes as an email draft with screenshots.",
+    escalateNote: "Open a pre-filled escalation request using these case details.",
+    copyNote: "Copy the case notes to paste into Lightning and stop the timer.",
+    manageAiTasks: "Add or manage your own AI prompts and skills.",
+    copyDevin: "Copy the selected AI prompt with the current case context.",
+    toggleActionDock: "Keep the action dock in place instead of floating while you scroll.",
+    openLogHelper: "Get a collection plan based on the selected OS and issue.",
+    toolboxLauncher: "Open the draggable quick-action toolbox."
+  };
+  const toolkitTooltips = {
+    templates: "Open reusable note templates for the current case.",
+    followup: "Track a follow-up owner, due date, and status.",
+    customer: "Draft a customer-ready update from the case details.",
+    summary: "Build a concise handoff summary for the next owner."
+  };
+  function addButtonTooltips() {
+    document.querySelectorAll?.("button").forEach(button => {
+      if (button.title) return;
+      const tooltip = buttonTooltips[button.id] || toolkitTooltips[button.dataset?.toolkit] || button.getAttribute?.("aria-label");
+      if (tooltip) button.title = tooltip;
+    });
+  }
+  addButtonTooltips();
   const actionDockPreferenceKey = "dell-support.case-notes.action-dock-floating";
   const actionDockToggle = $("toggleActionDock");
   let actionDockFloating = true;
