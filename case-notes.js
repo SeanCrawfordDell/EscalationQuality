@@ -5,8 +5,8 @@
   let state = CaseNotes.empty(), dirty = false, writable = false, copying = false, release;
   // Keep the case actions available at the top of the workspace while scrolling.
   const actionDock = document.getElementById("copyActions");
-  const caseNotesHero = document.querySelector?.(".hero");
-  if (caseNotesHero && actionDock) caseNotesHero.after(actionDock);
+  const caseWorkArea = $("caseWorkArea");
+  if (caseWorkArea?.prepend && actionDock) caseWorkArea.prepend(actionDock);
   const actionDockPreferenceKey = "dell-support.case-notes.action-dock-floating";
   const actionDockToggle = $("toggleActionDock");
   let actionDockFloating = true;
@@ -16,6 +16,7 @@
     if (!actionDock) return;
     actionDock.classList.toggle("floating-disabled", !actionDockFloating);
     actionDock.classList.toggle("right-rail", actionDockFloating && Boolean(rightRailQuery?.matches));
+    caseWorkArea?.classList.toggle("action-rail", actionDockFloating && Boolean(rightRailQuery?.matches));
     if (actionDockToggle) {
       actionDockToggle.textContent = actionDockFloating ? "Stop floating" : "Enable floating";
       actionDockToggle.setAttribute("aria-pressed", String(!actionDockFloating));
