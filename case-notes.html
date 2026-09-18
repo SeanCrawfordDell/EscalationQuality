@@ -22,6 +22,8 @@
 <script src="log-helper.js" defer></script>
 <script src="case-notes.js" defer></script>
 <script src="case-notes-demo.js" defer></script>
+<script src="case-toolbox-links.js" defer></script>
+<link rel="stylesheet" href="case-toolbox-links.css">
 </head>
 <body>
   <header class="topbar">
@@ -129,12 +131,24 @@
     <div class="demo-footer"><button id="demoBack" class="button secondary" type="button">Back</button><button id="demoNext" class="button primary" type="button">Next</button></div>
 </dialog>
 <div class="floating-toolbox" id="floatingToolbox">
-  <div class="toolbox-radial" id="toolboxRadial" aria-label="Case note quick actions">
+  <div class="toolbox-radial" id="toolboxRadial" aria-label="Case note quick actions" inert>
     <button type="button" data-toolbox-action="email">Email to Case</button>
     <button type="button" data-toolbox-action="escalate">Escalate to DE</button>
     <button type="button" data-toolbox-action="copy">Copy Notes</button>
   </div>
-  <button class="toolbox-launcher" id="toolboxLauncher" type="button" aria-expanded="false" aria-controls="toolboxRadial" aria-label="Open case notes toolbox">✦</button>
+  <button class="toolbox-launcher" id="toolboxLauncher" type="button" aria-expanded="false" aria-controls="toolboxRadial" aria-label="Open case notes toolbox"><svg viewBox="0 0 32 32" width="30" height="30" fill="none" aria-hidden="true"><path d="M11 9V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3" stroke="currentColor" stroke-width="2.4"/><rect x="3" y="9" width="26" height="19" rx="3" stroke="currentColor" stroke-width="2.4"/><path d="M3 17h26M11 15v5m10-5v5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
 </div>
+<dialog id="toolboxEditor" aria-labelledby="toolboxEditorTitle">
+  <h2 id="toolboxEditorTitle">Edit toolbox</h2>
+  <p>Add up to four URL shortcuts. Shortcuts are saved in this browser.</p>
+  <form id="toolboxLinkForm">
+    <label class="field">Shortcut name<input id="toolboxLinkName" required maxlength="32" autocomplete="off"></label>
+    <label class="field">URL<input id="toolboxLinkUrl" type="url" required placeholder="https://" autocomplete="off"></label>
+    <button class="button primary" type="submit">Add shortcut</button>
+  </form>
+  <p id="toolboxLinkStatus" role="status"></p>
+  <ul id="toolboxLinkList"></ul>
+  <button class="button secondary" id="closeToolboxEditor" type="button">Done</button>
+</dialog>
 </body>
 </html>

@@ -3,6 +3,10 @@
   const key = "dell-support.case-notes.v1";
   const $ = id => document.getElementById(id);
   let state = CaseNotes.empty(), dirty = false, writable = false, copying = false, release;
+  // Keep the case actions available at the top of the workspace while scrolling.
+  const actionDock = document.getElementById("copyActions");
+  const caseNotesHero = document.querySelector?.(".hero");
+  if (caseNotesHero && actionDock) caseNotesHero.after(actionDock);
   let loadFailed = false;
   const sidebarKey = "dell-support.case-history-collapsed";
   function setHistoryCollapsed(collapsed) {
@@ -713,10 +717,28 @@
   updateFloatingActions();
   const toolbox = $("floatingToolbox"), toolboxLauncher = $("toolboxLauncher");
   let toolboxMoved = false, toolboxStart;
+  const setToolboxOpen = open => {
+    toolbox.classList.toggle('is-open', open);
+    $('toolboxRadial').inert = !open;
+    toolboxLauncher.setAttribute('aria-expanded', String(open));
+    toolboxLauncher.setAttribute('aria-label', `${open ? 'Close' : 'Open'} case notes toolbox`);
+    if (open) {
+      const rect = toolbox.getBoundingClientRect();
+      toolbox.style.right = 'auto'; toolbox.style.bottom = 'auto';
+      toolbox.style.left = `${Math.max(124, Math.min(window.innerWidth - 182, rect.left))}px`;
+      toolbox.style.top = `${Math.max(132, Math.min(window.innerHeight - 132, rect.top))}px`;
+      toolbox.querySelectorAll('[data-toolbox-action]').forEach(button => {
+        button.disabled = $({email:'emailNote',escalate:'escalateNote',copy:'copyNote'}[button.dataset.toolboxAction]).disabled;
+      });
+    }
+  };
   toolboxLauncher?.addEventListener("pointerdown", event => { toolboxStart = { x:event.clientX, y:event.clientY, left:toolbox.offsetLeft, top:toolbox.offsetTop }; toolboxMoved = false; toolboxLauncher.setPointerCapture(event.pointerId); });
   toolboxLauncher?.addEventListener("pointermove", event => { if (!toolboxStart) return; const dx=event.clientX-toolboxStart.x, dy=event.clientY-toolboxStart.y; if (Math.abs(dx)+Math.abs(dy)>5) { toolboxMoved=true; toolbox.style.right="auto"; toolbox.style.bottom="auto"; toolbox.style.left=`${Math.max(8,Math.min(window.innerWidth-66,toolboxStart.left+dx))}px`; toolbox.style.top=`${Math.max(8,Math.min(window.innerHeight-66,toolboxStart.top+dy))}px`; } });
-  toolboxLauncher?.addEventListener("pointerup", event => { if (!toolboxStart) return; toolboxLauncher.releasePointerCapture(event.pointerId); toolboxStart=null; if (!toolboxMoved) { const open=toolbox.classList.toggle("is-open"); toolboxLauncher.setAttribute("aria-expanded", String(open)); } });
-  toolbox?.addEventListener("click", event => { const action=event.target.closest("[data-toolbox-action]")?.dataset.toolboxAction; if (!action) return; const target={email:"emailNote",escalate:"escalateNote",copy:"copyNote"}[action]; if (!$(target).disabled) $(target).click(); toolbox.classList.remove("is-open"); toolboxLauncher.setAttribute("aria-expanded","false"); });
+  toolboxLauncher?.addEventListener('pointerup', event => { if (!toolboxStart) return; toolboxLauncher.releasePointerCapture(event.pointerId); toolboxStart=null; });
+  toolboxLauncher?.addEventListener('pointercancel', () => { toolboxStart=null; toolboxMoved=false; });
+  toolboxLauncher?.addEventListener('click', () => { if (toolboxMoved) { toolboxMoved=false; return; } setToolboxOpen(!toolbox.classList.contains('is-open')); });
+  toolbox?.addEventListener('keydown', event => { if (event.key === 'Escape') { setToolboxOpen(false); toolboxLauncher.focus(); } });
+  toolbox?.addEventListener('click', event => { const action=event.target.closest('[data-toolbox-action]')?.dataset.toolboxAction; if (!action) return; const target={email:'emailNote',escalate:'escalateNote',copy:'copyNote'}[action]; if (!$(target).disabled) $(target).click(); setToolboxOpen(false); });
   document.addEventListener("visibilitychange", () => { if (document.hidden) save(); });
   window.addEventListener("beforeunload", event => {
     save();

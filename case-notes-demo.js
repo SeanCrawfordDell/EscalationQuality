@@ -15,8 +15,22 @@
     ["Hand off with one click", "Email to Case builds an HTML email with your notes and screenshots inline. Copy to Lightning copies a complete plain-text note and stops the timer. Escalate to DE opens a new escalation request with your case details and full note already attached.", "READY WHEN YOU ARE", "Start a case, capture what you know, and use Tutorial Demo any time from the top of this page to replay this tour."]
   ];
   let index = 0;
+  steps.splice(6, 0,
+    ['Your floating toolbox', 'Look for the blue toolbox icon floating over Case Notes. Drag the icon to a convenient position. Click it to spin the quick actions into a circle; click again or press Escape to close. Actions become available when you have an editable case.', 'TOOLBOX QUICK ACTIONS', 'Email to Case creates an email file. Escalate to DE opens your escalation. Copy Notes copies the note to the clipboard and stops the timer, just like Copy to Lightning.'],
+    ['Make the toolbox your own', 'Open the floating toolbox and choose Edit toolbox. Enter a shortcut name and an HTTP or HTTPS URL, then select Add shortcut. Your shortcut joins the circular menu and opens in a new tab. Use Remove in the editor to delete a custom shortcut.', 'CUSTOM URL SHORTCUTS', 'Save up to four links to the resources you use most. Shortcuts persist in this browser; they do not sync across devices.']
+  );
+  const toolboxPreview = document.createElement('div');
+  toolboxPreview.className = 'demo-toolbox-preview';
+  toolboxPreview.hidden = true;
+  const toolboxIcon = document.querySelector('#toolboxLauncher svg');
+  if (toolboxIcon) toolboxPreview.append(toolboxIcon.cloneNode(true));
+  const toolboxHint = document.createElement('p');
+  toolboxHint.textContent = 'Find this toolbox icon on the page. Drag to move • Click to open • Edit toolbox to add links';
+  toolboxPreview.append(toolboxHint);
+  document.getElementById('demoDescription').after(toolboxPreview);
   function render() {
     const [title, description, label, example] = steps[index];
+    toolboxPreview.hidden = !['TOOLBOX QUICK ACTIONS', 'CUSTOM URL SHORTCUTS'].includes(label);
     document.getElementById("demoProgress").textContent = `Step ${index + 1} of ${steps.length}`;
     document.getElementById("demoTitle").textContent = title;
     document.getElementById("demoDescription").textContent = description;
