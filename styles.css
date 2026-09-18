@@ -114,10 +114,27 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#111c2f; color:#d
 .action-row { display:grid; grid-template-columns:1fr 1fr auto; align-items:start; gap:12px; padding-block:14px; border-bottom:1px solid var(--line); }
 #addAction { margin-top:16px; }
 #copyPreview { min-height:320px; font-family:inherit; }
-.devin-copy { border-top:1px solid var(--line); margin-top:18px; padding-top:16px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; gap:12px; }
+.devin-copy { border-top:1px solid var(--line); margin-top:18px; padding-top:16px; display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:start; gap:12px; }
 .devin-copy #copyDevin { align-self:start; margin-top:9px; }
 .devin-copy p { grid-column:1 / -1; margin:0; color:var(--muted); font-size:12px; line-height:1.45; }
 @media(max-width:650px) { .devin-copy { grid-template-columns:1fr; } .devin-copy #copyDevin { margin-top:0; } }
+
+.ai-tasks-dialog { max-width:600px; width:90%; }
+.ai-tasks-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; }
+.ai-tasks-heading h2 { margin:0; font-size:18px; }
+.ai-tasks-help { color:var(--muted); font-size:13px; line-height:1.5; margin-bottom:20px; }
+.ai-tasks-section { margin-bottom:24px; padding-bottom:24px; border-bottom:1px solid var(--line); }
+.ai-tasks-section:last-child { border-bottom:none; }
+.ai-tasks-section h3 { margin:0 0 12px; font-size:15px; }
+.ai-tasks-actions { display:flex; gap:12px; margin-top:16px; }
+.custom-tasks-list { display:grid; gap:8px; max-height:300px; overflow:auto; }
+.custom-task-item { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--input-bg); }
+.custom-task-item .task-info { flex:1; display:flex; flex-direction:column; gap:4px; }
+.custom-task-item .task-label { font-weight:500; }
+.custom-task-item .task-instruction { font-size:12px; color:var(--muted); line-height:1.4; }
+.custom-task-item .remove-task { color:var(--red); background:none; border:none; cursor:pointer; padding:4px 8px; font-size:14px; }
+.custom-task-item .remove-task:hover { background:var(--red); color:white; border-radius:4px; }
+@media(max-width:600px) { .custom-task-item { flex-direction:column; align-items:flex-start; } .task-info { width:100%; } }
 button:disabled { opacity:.55; cursor:not-allowed; }
 button:focus-visible, a:focus-visible { outline:3px solid #4a9eff; outline-offset:3px; }
 @media(max-width:650px) { .action-row { grid-template-columns:1fr; } }

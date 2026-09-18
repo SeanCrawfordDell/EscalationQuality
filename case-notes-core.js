@@ -3,9 +3,14 @@
 const CaseNotes = (() => {
   const Toolkit = typeof module !== "undefined" ? require("./case-toolkit-core.js") : CaseToolkitCore;
   const fields = { tag: "Service Tag", platform: "System/Platform", request: "Service Request Number", os: "OS/Solution", osVersion: "OS version / build", country: "Customer Country", supportType: "OS Support", logLocation: "Log Location", issue: "Issue Description", notes: "Notes", next: "Action Plan / Next Steps" };
-  const empty = () => ({ version: 1, selected: null, cases: [] });
+  const defaultFieldOrder = Object.keys(fields);
+  const empty = () => ({ version: 2, selected: null, cases: [], fieldConfig: { order: [...defaultFieldOrder], customFields: {} } });
   const elapsed = (note, now) => note.elapsed + (note.started === null ? 0 : Math.max(0, now - note.started));
-  function stop(note, now) { note.elapsed = elapsed(note, now); note.started = null; }
+  const lastSession = (note, now) => note.started === null ? (note.lastSession || 0) : Math.max(0, now - note.started);
+  function stop(note, now) {
+    if (note.started !== null) note.lastSession = Math.max(0, now - note.started);
+    note.elapsed = elapsed(note, now); note.started = null;
+  }
   function start(state, note, now) {
     if (note.started !== null) return;
     state.cases.forEach(item => { if (item.started !== null) stop(item, now); });
@@ -13,7 +18,9 @@ const CaseNotes = (() => {
   }
   function create(state, id, now) {
     state.cases.forEach(item => { if (item.started !== null) stop(item, now); });
-    const note = { toolkit: Toolkit.defaults(), id, created: now, updated: now, elapsed: 0, started: now, ...Object.fromEntries(Object.keys(fields).map(key => [key, ""])) };
+    const fieldConfig = state.fieldConfig || { order: [...defaultFieldOrder], customFields: {} };
+    const allFields = { ...fields, ...fieldConfig.customFields };
+    const note = { toolkit: Toolkit.defaults(), id, created: now, updated: now, elapsed: 0, started: now, lastSession: 0, ...Object.fromEntries(Object.keys(allFields).map(key => [key, ""])) };
     state.cases.unshift(note); state.cases = state.cases.slice(0, 100); state.selected = id;
     return note;
   }
@@ -40,9 +47,12 @@ const CaseNotes = (() => {
     }
     return plain;
   }
-  function copyText(note, now) {
+  function copyText(note, now, fieldConfig = null) {
     const extra = Toolkit.extraText(note);
-    return [...Object.entries(fields).map(([key, label]) => `${label}:\n${plainImages(note[key])}`), ...(extra ? [extra] : []), `Time Spent:\n${duration(elapsed(note, now))}`].join("\n\n");
+    const config = fieldConfig || { order: [...defaultFieldOrder], customFields: {} };
+    const allFields = { ...fields, ...config.customFields };
+    const orderedFields = config.order.filter(key => allFields[key]).concat(Object.keys(config.customFields).filter(key => !config.order.includes(key)));
+    return [...orderedFields.map(key => `${allFields[key] || key}:\n${plainImages(note[key] || "")}`), ...(extra ? [extra] : []), `Time Spent:\n${duration(elapsed(note, now))}`].join("\n\n");
   }
   function emailFile(note, now, content, token) {
     if (!/^[a-zA-Z0-9-]+$/.test(token)) throw Error("Invalid email ID");
@@ -72,24 +82,41 @@ const CaseNotes = (() => {
     snapshot.cases.forEach(note => stop(note, now));
     return JSON.stringify(snapshot, null, 2);
   }
-  function escalation(note, now) {
+  function escalation(note, now, fieldConfig = null) {
+    const config = fieldConfig || { order: [...defaultFieldOrder], customFields: {} };
+    const customFieldsData = {};
+    Object.keys(config.customFields).forEach(key => {
+      if (note[key]) customFieldsData[config.customFields[key]] = note[key];
+    });
     return { problem: note.issue, tag: note.tag, os: note.os, country: note.country,
       osVersion: note.osVersion || "", serviceRequest: note.request, platform: note.platform || "", supportType: note.supportType || "", logLocation: note.logLocation || "", impact: note.toolkit?.impact || "", checks: note.toolkit?.checks || {}, issueType: note.toolkit?.issueType || "general",
-      troubleshooting: plainImages(note.notes), nextSteps: plainImages(note.next), sourceNote: copyText(note, now) };
+      troubleshooting: plainImages(note.notes), nextSteps: plainImages(note.next), sourceNote: copyText(note, now, config), customFields: customFieldsData };
   }
   function parse(raw) {
     if (raw === null) return empty();
     const state = JSON.parse(raw);
-    if (state.version !== 1 || !Array.isArray(state.cases) || state.cases.length > 100) throw Error("Invalid history");
+    if (state.version === 1) {
+      state.version = 2;
+      state.fieldConfig = { order: [...defaultFieldOrder], customFields: {} };
+    }
+    if (state.version !== 2 || !Array.isArray(state.cases) || state.cases.length > 100) throw Error("Invalid history");
+    if (!state.fieldConfig) state.fieldConfig = { order: [...defaultFieldOrder], customFields: {} };
     const ids = new Set(); let running = 0;
+    const allFields = { ...fields, ...state.fieldConfig.customFields };
     for (const note of state.cases) {
       // Older saved cases predate these optional fields; retain all existing data.
       if (note && typeof note === "object") {
         for (const key of ["os", "country", "supportType", "logLocation", "platform", "osVersion"]) {
           if (!Object.hasOwn(note, key)) note[key] = "";
         }
+        // Add custom fields to existing notes
+        for (const key of Object.keys(state.fieldConfig.customFields)) {
+          if (!Object.hasOwn(note, key)) note[key] = "";
+        }
+        // Older saved cases predate per-session tracking.
+        if (!Object.hasOwn(note, "lastSession")) note.lastSession = 0;
       }
-      if (!note || typeof note.id !== "string" || ids.has(note.id) || ![note.created, note.updated, note.elapsed].every(n => Number.isFinite(n) && n >= 0) || !(note.started === null || (Number.isFinite(note.started) && note.started >= 0)) || !Object.keys(fields).every(key => typeof note[key] === "string")) throw Error("Invalid case");
+      if (!note || typeof note.id !== "string" || ids.has(note.id) || ![note.created, note.updated, note.elapsed, note.lastSession].every(n => Number.isFinite(n) && n >= 0) || !(note.started === null || (Number.isFinite(note.started) && note.started >= 0)) || !Object.keys(allFields).every(key => typeof note[key] === "string")) throw Error("Invalid case");
       if (!Object.hasOwn(note, "images")) note.images = {};
       if (!note.images || typeof note.images !== "object" || Array.isArray(note.images) || !Object.entries(note.images).every(([id, image]) => /^[a-zA-Z0-9-]+$/.test(id) && image && typeof image.name === "string" && typeof image.data === "string" && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(image.data))) throw Error("Invalid screenshots");
       Toolkit.validate(note);
@@ -99,6 +126,36 @@ const CaseNotes = (() => {
     state.cases.sort((a, b) => b.created - a.created);
     return state;
   }
-  return { fields, empty, elapsed, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse };
+  function addCustomField(state, fieldId, fieldLabel) {
+    if (!/^[a-zA-Z0-9_-]+$/.test(fieldId)) throw Error("Invalid field ID");
+    if (fields[fieldId] || state.fieldConfig.customFields[fieldId]) throw Error("Field already exists");
+    state.fieldConfig.customFields[fieldId] = fieldLabel;
+    state.fieldConfig.order.push(fieldId);
+    // Add empty value to all existing cases
+    state.cases.forEach(note => note[fieldId] = "");
+    return state;
+  }
+  function removeCustomField(state, fieldId) {
+    if (fields[fieldId]) throw Error("Cannot remove built-in field");
+    if (!state.fieldConfig.customFields[fieldId]) throw Error("Custom field not found");
+    delete state.fieldConfig.customFields[fieldId];
+    state.fieldConfig.order = state.fieldConfig.order.filter(id => id !== fieldId);
+    // Remove field from all existing cases
+    state.cases.forEach(note => delete note[fieldId]);
+    return state;
+  }
+  function reorderFields(state, newOrder) {
+    if (!Array.isArray(newOrder)) throw Error("Invalid order");
+    const allFields = { ...fields, ...state.fieldConfig.customFields };
+    if (!newOrder.every(id => allFields[id])) throw Error("Invalid field in order");
+    if (newOrder.length !== Object.keys(allFields).length) throw Error("Missing fields in order");
+    state.fieldConfig.order = newOrder;
+    return state;
+  }
+  function getEffectiveFields(state) {
+    const allFields = { ...fields, ...state.fieldConfig.customFields };
+    return state.fieldConfig.order.filter(key => allFields[key]).map(key => ({ id: key, label: allFields[key] }));
+  }
+  return { fields, defaultFieldOrder, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, reorderFields, getEffectiveFields };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;

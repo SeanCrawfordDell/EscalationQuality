@@ -23,8 +23,41 @@ test('timestamps survive closure, resume adds time, copy includes every field an
 });
 function harness({writeError=false,copyError=false,locked=false}={}) {
   const elements={}, intervals=[], events={};let stored=null, now=1000;
-  function element(){return {options:[],querySelectorAll(){return []},value:'',hidden:false,disabled:false,textContent:'',classList:{toggle(){}},listeners:{},setAttribute(){},append(...items){this.children=(this.children||[]).concat(items)},replaceChildren(...items){this.children=items},addEventListener(k,f){this.listeners[k]=f},focus(){}}}
+  function element(){
+    const el={
+      options:[],_children:[],
+      get children(){return this._children},set children(v){this._children=v},
+      querySelectorAll(){return []},
+      querySelector(sel){
+        if(sel==='[id]')return this.id?this:this._children.find(c=>typeof c==='object'&&c&&c.querySelector&&c.querySelector('[id]'))?.querySelector('[id]');
+        return this._children.find(c=>typeof c==='object'&&((sel.startsWith('.')&&c.className===sel.slice(1))||(sel==='textarea'&&c.tagName==='TEXTAREA')));
+      },
+      value:'',_innerHTML:'',
+      get innerHTML(){return this._innerHTML},set innerHTML(v){this._innerHTML=v;if(v==='')this._children=[]},
+      hidden:false,disabled:false,textContent:'',className:'',
+      classList:{toggle(){}},listeners:{},setAttribute(){},
+      append(...items){for(const item of items)this._children.push(item)},
+      appendChild(item){this._children.push(item);return item},
+      replaceChildren(...items){this._children=items},
+      addEventListener(k,f){this.listeners[k]=f},focus(){}
+    };
+    return el;
+  }
   const get=id=>elements[id]??=element();
+  // Pre-populate the field grid to mirror case-notes.html's default field containers,
+  // so render()'s DOM reordering logic (which walks .field-grid children) works in tests.
+  const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
+  const gridMatch=/<fieldset id="fields"[^>]*><div class="field-grid">([\s\S]*?)<\/div>\s*<\/fieldset>/.exec(html);
+  const fieldGrid=element(); fieldGrid.className='field-grid';
+  if(gridMatch){
+    for(const m of gridMatch[1].matchAll(/<label class="field">[^<]*<(?:input|select|textarea)[^>]*\bid="([^"]+)"/g)){
+      const input=get(m[1]);
+      const container=element(); container.className='field';
+      container.querySelector=sel=>sel==='[id]'?input:null;
+      fieldGrid.appendChild(container);
+    }
+  }
+  get('fields').querySelector=sel=>sel==='.field-grid'?fieldGrid:null;
   const ctx={confirm:()=>true,CaseNotes:C,DevinPrompt:require('../devin-prompt-core.js'),document:{getElementById:get,createElement:element,createElementNS:element,addEventListener(k,f){events[k]=f}},window:{addEventListener(k,f){events[k]=f}},localStorage:{getItem:()=>stored,setItem(k,v){if(writeError)throw Error('full');stored=v}},navigator:{locks:{request(k,f){if(!locked)return f();return new Promise(()=>{})}},clipboard:{async writeText(text){if(copyError)throw Error('denied');ctx.copied=text}}},crypto:{randomUUID:()=>String(now)},Date:class extends Date{static now(){return now}},setInterval(f,ms){intervals.push({f,ms})},Promise,console};
   vm.runInNewContext(fs.readFileSync(require.resolve('../case-notes.js'),'utf8'),ctx);
   return {get,events,intervals,ctx,setTime:n=>now=n,stored:()=>stored,failWrite:v=>writeError=v,click:id=>get(id).listeners.click(),edit(id,value){get(id).value=value;get('noteForm').listeners.input({target:{id,value}})}};
@@ -63,7 +96,7 @@ test('new case details autosave and are included in Lightning copy',async()=>{
   await h.click('copyNote');
   for(const [key,value] of Object.entries(details))assert.ok(h.ctx.copied.includes(`${C.fields[key]}:\n${value}`));
 });
-test('Copy to Devin creates a bounded prompt without stopping time tracking',async()=>{
+test('Copy to AI creates a bounded prompt without stopping time tracking',async()=>{
   const h=harness();h.click('newNote');h.edit('issue','Unexpected service restart');h.get('devinTask').value='troubleshoot';
   await h.click('copyDevin');
   assert.match(h.ctx.copied,/Task: Suggest next troubleshooting/);
@@ -96,6 +129,26 @@ test('manual stop saves elapsed time and disables the button until editing resum
   note=C.parse(h.stored()).cases[0];
   assert.equal(note.started,16000);assert.equal(note.elapsed,5000);
   assert.equal(h.get('stopTimer').disabled,false);
+});
+test('stopping the timer keeps the just-finished session duration visible until a new session starts', () => {
+  const state=C.empty(),note=C.create(state,'session',1000);
+  assert.equal(C.lastSession(note,4000),3000);
+  C.stop(note,6000);
+  assert.equal(note.lastSession,5000);
+  assert.equal(C.lastSession(note,6000),5000);
+  assert.equal(C.lastSession(note,60000),5000);
+  C.start(state,note,66000);
+  assert.equal(C.lastSession(note,66000),0);
+  assert.equal(C.lastSession(note,70000),4000);
+  assert.equal(note.lastSession,5000);
+  const restored=C.parse(C.backup(state,80000)).cases[0];
+  assert.equal(restored.lastSession,14000);
+});
+test('older saved cases without session tracking migrate to a zero last session', () => {
+  const state=C.empty(),note=C.create(state,'legacy-session',1000);
+  delete note.lastSession;
+  const restored=C.parse(JSON.stringify(state)).cases[0];
+  assert.equal(restored.lastSession,0);
 });
 test('backup freezes elapsed time without changing live history and restores all case fields', () => {
   const state=C.empty(), note=C.create(state,'backup',1000);

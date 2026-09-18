@@ -5,6 +5,7 @@ function harness({stored=null,failStorage=false,failClipboard=false,imported=nul
  class Element {
   constructor(tag='div'){this.tagName=tag.toUpperCase();this.value='';this.textContent='';this.children=[];this.listeners={};this.attributes={};this.hidden=false;this.style={};this.options=[];this.classList={add(){},remove(){},toggle(){}};}
   append(...items){for(const item of items){if(typeof item==='object'){item.parent=this;if(item.tagName==='OPTION')this.options.push(item);}this.children.push(item)}}
+  appendChild(item){this.append(item);return item}
   replaceChildren(...items){this.children=[];this.append(...items)}
   after(item){if(item.id)nodes[item.id]=item;this.parent?.append(item)}
   remove(){if(this.id)delete nodes[this.id]}
@@ -41,9 +42,9 @@ test('edits invalidate review; copy requires a fresh review and reports clipboar
  await h.click('copyButton');assert.match(h.get('copyStatus').textContent,/Review/);
  const f=harness({failClipboard:true});await f.click('loadStrong');await f.click('copyButton');assert.match(f.get('copyStatus').textContent,/Copy failed/);assert.equal(f.get('copyPreview').selected,true);
 });
-test('Copy to Devin includes current escalation facts and its selected task',async()=>{
+test('Copy to AI includes current escalation facts and its selected task',async()=>{
  const h=harness();await h.click('loadStrong');h.get('devinTask').value='logs';await h.click('copyDevin');
- assert.match(h.copied(),/Task: Recommend logs to collect/);assert.match(h.copied(),/SERVICE REQUEST NUMBER:\n123456789/);assert.match(h.get('devinStatus').textContent,/Copied for Devin/);
+ assert.match(h.copied(),/Task: Recommend logs to collect/);assert.match(h.copied(),/SERVICE REQUEST NUMBER:\n123456789/);assert.match(h.get('devinStatus').textContent,/Copied for AI/);
 });
 test('samples and clear protect typed drafts even before first review',async()=>{
  const h=harness();h.get('problem').value='Original work';h.setConfirm(false);await h.click('loadStrong');await h.click('clearForm');assert.equal(h.get('problem').value,'Original work');
