@@ -70,9 +70,9 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
   .case-work-area.action-rail { display:grid; grid-template-columns:290px minmax(0, 1fr) 270px; gap:16px 22px; align-items:start; }
   .case-work-area.action-rail .notes-layout { display:contents; }
   .case-work-area.action-rail #toggleHistory { grid-column:1; grid-row:1; margin:0; }
-  .case-work-area.action-rail #caseHistory { grid-column:1; grid-row:2; }
-  .case-work-area.action-rail .editor { grid-column:2; grid-row:1 / span 2; }
-  .case-work-area.action-rail .copy-actions.right-rail { position:sticky; top:24px; grid-column:3; grid-row:1 / span 2; box-sizing:border-box; width:auto; max-height:calc(100vh - 48px); overflow:auto; margin:0; padding:14px; grid-template-columns:1fr; grid-template-areas:"actions" "toolkit" "devin"; }
+  .case-work-area.action-rail #caseHistory { grid-column:1; grid-row:1; margin-top:68px; }
+  .case-work-area.action-rail .editor { grid-column:2; grid-row:1; }
+  .case-work-area.action-rail .copy-actions.right-rail { position:sticky; top:24px; grid-column:3; grid-row:1; box-sizing:border-box; width:auto; max-height:calc(100vh - 48px); overflow:auto; margin:0; padding:14px; grid-template-columns:1fr; grid-template-areas:"actions" "toolkit" "devin"; }
   .case-work-area.action-rail .note-actions,.case-work-area.action-rail .toolkit-nav { flex-direction:column; align-items:stretch; }
   .case-work-area.action-rail .note-actions .button,.case-work-area.action-rail .toolkit-nav .button { width:100%; text-align:left; }
   .case-work-area.action-rail .toolkit-nav { justify-content:flex-start; }
