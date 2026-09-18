@@ -1,7 +1,8 @@
 "use strict";
 const CaseSettings = (() => {
+  const templateCore = typeof module !== "undefined" ? require("./case-toolkit-core.js") : CaseToolkitCore;
   const keys = {
-    aiTasks: "dell-support.custom-ai-tasks", theme: "theme",
+    aiTasks: "dell-support.custom-ai-tasks", theme: "theme", templates: "dell-support.case-templates.v1",
     floating: "dell-support.case-notes.action-dock-floating",
     historyCollapsed: "dell-support.case-history-collapsed",
     sections: "dell-support.case-notes-sections", pins: "dell-support.pinned-resources.v1"
@@ -36,6 +37,7 @@ const CaseSettings = (() => {
       if (!object(config.preferences)) bad();
       for (const [name, value] of Object.entries(config.preferences)) {
         if (!Object.hasOwn(keys, name)) continue;
+        if (name === "templates") templateCore.validateTemplates(value);
         if (name === "theme" && ![null,"dark","light"].includes(value)) bad();
         if (["floating","historyCollapsed"].includes(name) && ![null,"true","false"].includes(value)) bad();
         if (name === "sections" && (!object(value) || Object.keys(value).some(id => !["caseDetails","notes","actionPlan"].includes(id)) || Object.values(value).some(v => typeof v !== "boolean"))) bad();

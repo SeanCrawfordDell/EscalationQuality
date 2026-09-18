@@ -2,7 +2,7 @@
 
 ## Saving and backups
 
-Notes autosave in this browser every ten seconds. Choose **Set Backup Folder** to select an approved location, preferably a work OneDrive-synced Documents folder. The app creates `ProSupportToolsBackup` there (or uses that folder if selected directly).
+Notes autosave in this browser every ten seconds. Open **Backup & Restore** beside **Customize Fields** for history backups, settings backups, and restore options. Choose **Set Backup Folder** to select an approved location, preferably a work OneDrive-synced Documents folder. The app creates `ProSupportToolsBackup` there (or uses that folder if selected directly). The same folder button becomes **Reconnect Backup Folder** when permission is needed, or **Change Backup Folder** when connected.
 
 Once access is approved, changed notes and settings are backed up approximately every minute while Case Notes is open. Browser background throttling can delay this; it is not a background service. **Backup History** saves immediately. The status shows the last successful folder backup; **Reconnect Backup Folder** requests access again when permission expires. Browsers without folder access can download history and settings instead.
 
@@ -22,19 +22,25 @@ Search includes case fields, note content, next steps, custom fields, and suppor
 
 ## Restoring settings and notes
 
-**Export Settings** saves `customer-config.json` and a dated settings copy directly to your configured `ProSupportToolsBackup` folder. Without a connected folder, it downloads the settings file instead. If folder access is denied or a write fails, the status explains the failure so you can reconnect and retry; it does not silently download elsewhere. Settings exports do not change your case-note backup files or the last successful full-backup time.
+**Backup Settings** saves `customer-config.json` and a dated settings copy directly to your configured `ProSupportToolsBackup` folder. Without a connected folder, it downloads the settings file instead. If folder access is denied or a write fails, the status explains the failure so you can reconnect and retry; it does not silently download elsewhere. Settings backups do not change your case-note backup files or the last successful full-backup time.
 
-Settings include field configuration, toolbox URLs/order/colors, custom AI prompts, theme, floating-panel preference, collapsed sections/history, and pinned site resources. They do not include browser folder permissions or the temporary dragged position of the toolbox.
+Settings include field configuration, toolbox URLs/order/colors, custom AI prompts, personal and edited built-in troubleshooting templates, theme, floating-panel preference, collapsed sections/history, and pinned site resources. They do not include browser folder permissions or the temporary dragged position of the toolbox.
 
 **Restore Settings** offers two sources: **From backup folder** reads `customer-config.json` from the connected folder, and **Choose a file** accepts a downloaded or dated settings file. Imports are validated before applying; a confirmation explains that existing preferences will change. Older field/toolbox-only settings backups are supported.
 
-**Restore History** replaces the complete current history with a history backup after confirmation, including Archive, Trash, and versions. Export current history first if you need to retain it. Settings are restored separately. An **Export Case JSON** file instead imports one case, replacing only a matching case ID after confirmation.
+**Restore History** replaces the complete current history with a history backup after confirmation, including Archive, Trash, and versions. Export current history first if you need to retain it. Settings are restored separately. Previously created individual-case JSON exports remain importable, replacing only a matching case ID after confirmation.
+
+## Personal troubleshooting templates
+
+Use **Manage templates** beside the issue dropdown to create a template or edit an existing one. Set a name, note text/prompts, and optional next steps. These fields accept plain text and line breaks, not HTML. **Save template** makes it available in the dropdown immediately and after reopening the browser.
+
+Built-in templates can be renamed and edited; **Reset to default** restores their original name and content. Personal templates can be deleted after confirmation. Neither editing nor deleting a template changes existing case notes. If a case references a template that is no longer available, choose another template or restore settings before applying it.
+
+Selecting a template does not insert text. **Apply template** appends its notes and next steps, preserving existing notes and screenshots. Template customizations are personal to this browser and included in **Backup Settings**, full folder backups, and **Restore Settings**. Older settings files without template data leave current customizations unchanged.
 
 ## Sharing and printing
 
-- **Export This Case** downloads a standalone HTML document with the selected case's fields, formatted notes, screenshots, and tracked time.
-- **Export Case JSON** creates an individual-case file that can be imported back through Restore History.
-- **Print / PDF** opens the browser print dialog. Choose Save as PDF if available.
+**Print / PDF** opens the browser print dialog. Choose Save as PDF if available.
 
 Review customer information before sharing exports or copying notes into AI tools.
 

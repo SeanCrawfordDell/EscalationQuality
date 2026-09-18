@@ -8,6 +8,24 @@ const CaseToolkitCore = (() => {
     performance: { name:"Performance degradation", prompts:["Affected workload and business impact", "Normal baseline versus current behavior", "Start time and duration", "CPU, memory, storage, and network observations", "Recent changes", "Measurements and comparison results"] }
   };
   const statuses = ["Open", "In progress", "Waiting on customer", "Completed"];
+  const templateStorageKey = "dell-support.case-templates.v1";
+  const validTemplateId = id => typeof id === "string" && (Object.hasOwn(templates,id) || /^custom-[a-zA-Z0-9-]{1,80}$/.test(id));
+  const defaultNext = "Action: [Add next action]\nOwner: [Assign owner]\nFollow-up: [Agree date and time]";
+  function validateTemplates(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length > 100) throw Error("Invalid template settings");
+    const result = {};
+    for (const [id,item] of Object.entries(value)) {
+      if (!validTemplateId(id) || !item || typeof item !== "object" || Array.isArray(item) || typeof item.name !== "string" || !item.name.trim() || item.name.length > 100 || typeof item.notes !== "string" || !item.notes.trim() || item.notes.length > 20000 || typeof item.next !== "string" || item.next.length > 20000) throw Error("Invalid template. Enter a name and note text within the size limits.");
+      result[id] = {name:item.name.trim(),notes:item.notes,next:item.next};
+    }
+    return result;
+  }
+  function templateCatalog(overrides = {}) {
+    const result = Object.fromEntries(Object.entries(templates).map(([id,item])=>[id,{name:item.name,notes:item.prompts.map(p=>p+": [Add details]").join("\n"),next:defaultNext}]));
+    return Object.assign(result,validateTemplates(overrides));
+  }
+  function loadTemplates(storage) { return validateTemplates(JSON.parse(storage.getItem(templateStorageKey) || "{}")); }
+  function saveTemplates(storage,overrides) { const validated=validateTemplates(overrides);storage.setItem(templateStorageKey,JSON.stringify(validated));return validated; }
   function defaults() { return { issueType:"general", impact:"", questions:"", owner:"", due:"", status:"Open", checks:{}, timeline:[], timelineAction:"", timelineResult:"", customerDraft:"", summaryDraft:"" }; }
   function ensure(note) {
     if (!note.toolkit) note.toolkit = defaults();
@@ -15,14 +33,23 @@ const CaseToolkitCore = (() => {
   }
   function validate(note) {
     const data = ensure(note);
-    if (!data || typeof data !== "object" || !Object.hasOwn(templates,data.issueType) || !statuses.includes(data.status) || !["impact","questions","owner","due","customerDraft","summaryDraft","timelineAction","timelineResult"].every(k=>typeof data[k]==="string") || (data.due && !Number.isFinite(Date.parse(data.due))) || !data.checks || typeof data.checks!=="object" || Array.isArray(data.checks) || !Object.values(data.checks).every(v=>typeof v==="boolean") || !Array.isArray(data.timeline) || !data.timeline.every(e=>e && typeof e.id==="string" && Number.isFinite(e.at) && e.at>=0 && typeof e.action==="string" && typeof e.result==="string")) throw Error("Invalid case toolkit data");
+    if (!data || typeof data !== "object" || !validTemplateId(data.issueType) || !statuses.includes(data.status) || !["impact","questions","owner","due","customerDraft","summaryDraft","timelineAction","timelineResult"].every(k=>typeof data[k]==="string") || (data.due && !Number.isFinite(Date.parse(data.due))) || !data.checks || typeof data.checks!=="object" || Array.isArray(data.checks) || !Object.values(data.checks).every(v=>typeof v==="boolean") || !Array.isArray(data.timeline) || !data.timeline.every(e=>e && typeof e.id==="string" && Number.isFinite(e.at) && e.at>=0 && typeof e.action==="string" && typeof e.result==="string")) throw Error("Invalid case toolkit data");
     return data;
   }
   const overdue = (note, now) => !!note.toolkit?.due && note.toolkit.status !== "Completed" && Date.parse(note.toolkit.due) < now;
   const escape = text => text.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  function templateHtml(key) {
+  function templateHtml(key, overrides = {}) {
+    if (Object.hasOwn(overrides,key) || !Object.hasOwn(templates,key)) {
+      const item=templateCatalog(overrides)[key];if(!item)throw Error("Template unavailable. Choose another template or restore your settings.");
+      return `<h3>${escape(item.name)}</h3>`+textHtml(item.notes);
+    }
     const preset=templates[key];
     return `<h3>${escape(preset.name)}</h3>`+preset.prompts.map(prompt=>`<p><strong>${escape(prompt)}:</strong> [Add details]</p>`).join("");
+  }
+  function textHtml(text) { return text.split(/\r?\n/).map(line=>`<p>${escape(line) || '<br>'}</p>`).join(''); }
+  function templateNextHtml(key,overrides = {}) {
+    const item=templateCatalog(overrides)[key];if(!item)throw Error("Template unavailable. Choose another template or restore your settings.");
+    return item.next.trim() ? '<h3>Next steps</h3>'+textHtml(item.next) : '';
   }
   const guides = {
     "Windows Server": ["windows", "Export System, Application, and relevant role event logs for the incident window", "Microsoft support tools", "https://github.com/DellProSupportGse/Tools"],
@@ -41,7 +68,7 @@ const CaseToolkitCore = (() => {
     const guide=guides[note.os];
     if(guide) list.push({id:guide[0],text:guide[1],label:guide[2],url:guide[3]});
     const specifics={boot:"Capture the boot console or failure screen and boot-device observations",crash:"Locate the crash dump / panic record and logs preceding the restart",network:"Record source/destination, interface configuration, and connectivity test results",performance:"Capture time-aligned resource metrics and a normal-performance comparison",general:"Capture reproduction steps and observed results"};
-    list.push({id:"issue-"+data.issueType,text:specifics[data.issueType]},{id:"location",text:"Attach collected evidence to the case and record its Log Location"});
+    list.push({id:"issue-"+data.issueType,text:specifics[data.issueType] || specifics.general},{id:"location",text:"Attach collected evidence to the case and record its Log Location"});
     return list;
   }
   function extraText(note) {
@@ -70,6 +97,6 @@ const CaseToolkitCore = (() => {
     const data=ensure(note);
     return `HANDOFF SUMMARY\nService Request: ${note.request || "Not provided"}\nService Tag: ${note.tag || "Not provided"}\nSystem/Platform: ${note.platform || "Not provided"}\nOS/Solution: ${note.os || "Not provided"}\n\nIssue:\n${note.issue || "Not recorded"}\n\nBusiness impact:\n${data.impact || "Not recorded"}\n\nInvestigation:\n${concise(plain(note.notes)) || "Not recorded"}\n\nNext steps:\n${plain(note.next) || "Not recorded"}\n\nRemaining questions:\n${data.questions || "Not recorded"}\n\nEvidence location: ${note.logLocation || "Not recorded"}\nOwner: ${data.owner || "Not assigned"}\nStatus: ${data.status}\nFollow-up due: ${data.due ? new Date(data.due).toLocaleString() : "Not scheduled"}\nTime spent: ${elapsed}`;
   }
-  return {templates,statuses,defaults,ensure,validate,overdue,templateHtml,checklist,extraText,customerUpdate,summary};
+  return {templates,templateStorageKey,validateTemplates,templateCatalog,loadTemplates,saveTemplates,templateNextHtml,statuses,defaults,ensure,validate,overdue,templateHtml,checklist,extraText,customerUpdate,summary};
 })();
 if(typeof module!=="undefined")module.exports=CaseToolkitCore;

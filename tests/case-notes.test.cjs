@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const C = require('../case-notes-core.js');
-test('Export Settings saves latest and dated settings in the configured folder without changing note backups', async () => {
+test('Backup Settings saves latest and dated settings in the configured folder without changing note backups', async () => {
   const files=new Map();let closed=0;
   const folder={queryPermission:async()=> 'granted',async getFileHandle(name,options){assert.equal(options.create,true);return {async createWritable(){return {async write(value){files.set(name,value);},async close(){closed++;}};}};}};
   const h=harness({folder});await new Promise(setImmediate);
@@ -16,21 +16,21 @@ test('Export Settings saves latest and dated settings in the configured folder w
   assert.equal(h.ctx.localStorage.getItem('dell-support.last-backup-at'),null);
   assert.match(h.get('backupFolderStatus').textContent,/Settings saved to ProSupportToolsBackup/);
 });
-test('Export Settings requests folder access and leaves files untouched when denied', async () => {
+test('Backup Settings requests folder access and leaves files untouched when denied', async () => {
   let requests=0,writes=0;
   const folder={queryPermission:async()=> 'prompt',requestPermission:async()=>{requests++;return 'denied';},async getFileHandle(){writes++;}};
   const h=harness({folder});await new Promise(setImmediate);await h.click('downloadSettings');
   assert.equal(requests,1);assert.equal(writes,0);
   assert.match(h.get('backupFolderStatus').textContent,/Settings were not exported/);
 });
-test('Export Settings aborts failed writes and allows retry', async () => {
+test('Backup Settings aborts failed writes and allows retry', async () => {
   let fail=true,aborts=0;
   const folder={queryPermission:async()=> 'granted',async getFileHandle(){return {async createWritable(){return {async write(){if(fail)throw Error('disk full');},async close(){},async abort(){aborts++;}};}};}};
   const h=harness({folder});await new Promise(setImmediate);await h.click('downloadSettings');
   assert.equal(aborts,1);assert.match(h.get('backupFolderStatus').textContent,/did not finish/);
   fail=false;await h.click('downloadSettings');assert.match(h.get('backupFolderStatus').textContent,/Settings saved/);
 });
-test('Export Settings downloads a file when no backup folder is connected', async () => {
+test('Backup Settings downloads a file when no backup folder is connected', async () => {
   const h=harness();const downloads=[];
   h.ctx.URL={createObjectURL(blob){downloads.push(blob);return 'blob:test';},revokeObjectURL(){}};
   h.ctx.Blob=Blob;h.ctx.setTimeout=()=>{};
@@ -89,6 +89,7 @@ function harness({writeError=false,copyError=false,locked=false,folder=null}={})
   const elements={}, intervals=[], events={};let stored=null, now=1000;
   const preferences = new Map();
   function element(){
+    const classes = new Set();
     const el={
       options:[],_children:[],
       get children(){return this._children},set children(v){this._children=v},
@@ -101,7 +102,7 @@ function harness({writeError=false,copyError=false,locked=false,folder=null}={})
       get innerHTML(){return this._innerHTML},set innerHTML(v){this._innerHTML=v;if(v==='')this._children=[]},
       hidden:false,disabled:false,textContent:'',className:'',open:false,clickCount:0,
       showModal(){this.open=true;},close(){this.open=false;},click(){this.clickCount++;this.listeners.click?.();},
-      classList:{toggle(){}},listeners:{},setAttribute(){},
+      classList:{toggle(name,enabled){if(enabled ?? !classes.has(name))classes.add(name);else classes.delete(name);},contains(name){return classes.has(name);}},listeners:{},setAttribute(){},
       append(...items){for(const item of items)this._children.push(item)},
       appendChild(item){this._children.push(item);return item},
       replaceChildren(...items){this._children=items},
@@ -147,6 +148,47 @@ function harness({writeError=false,copyError=false,locked=false,folder=null}={})
   vm.runInNewContext(fs.readFileSync(require.resolve('../case-notes.js'),'utf8'),ctx);
   return {get,events,intervals,ctx,setTime:n=>now=n,stored:()=>stored,failWrite:v=>writeError=v,click:id=>get(id).listeners.click(),edit(id,value){get(id).value=value;get('noteForm').listeners.input({target:{id,value}})}};
 }
+test('missing backups warn on startup and configure opens backup options',async()=>{
+  const h=harness();await new Promise(setImmediate);
+  assert.equal(h.get('backupWarningDialog').open,true);
+  assert.match(h.get('backupWarningMessage').textContent,/not configured/);
+  h.click('configureBackups');
+  assert.equal(h.get('backupWarningDialog').open,false);
+  assert.equal(h.get('backupRestoreDialog').open,true);
+});
+test('dismissed backup warning stays closed for this visit',async()=>{
+  const h=harness();await new Promise(setImmediate);
+  h.click('dismissBackupWarning');
+  await h.intervals.find(i=>i.ms===60000).f();
+  assert.equal(h.get('backupWarningDialog').open,false);
+});
+test('startup warning waits for folder permission and skips connected folders',async()=>{
+  for(const permission of ['granted','prompt','denied']) {
+    const h=harness({folder:{queryPermission:async()=>permission}});
+    await new Promise(setImmediate);
+    assert.equal(h.get('backupWarningDialog').open,permission!=='granted');
+    if(permission!=='granted')assert.match(h.get('backupWarningMessage').textContent,/permission/);
+  }
+});
+test('backup popup opens and closes without changing notes',async()=>{
+  const h=harness();const before=h.stored();
+  await h.click('openBackupRestore');
+  assert.equal(h.get('backupRestoreDialog').open,true);
+  assert.equal(h.get('chooseBackupFolder').textContent,'Set Backup Folder');
+  h.click('closeBackupRestore');
+  assert.equal(h.get('backupRestoreDialog').open,false);
+  assert.equal(h.stored(),before);
+});
+test('folder control reconnects a saved folder then offers change folder',async()=>{
+  let permission='prompt',requests=0;
+  const h=harness({folder:{queryPermission:async()=>permission,requestPermission:async()=>{requests++;permission='granted';return permission;}}});
+  await new Promise(resolve=>setImmediate(resolve));
+  await h.click('openBackupRestore');
+  assert.equal(h.get('chooseBackupFolder').textContent,'Reconnect Backup Folder');
+  await h.click('chooseBackupFolder');
+  assert.equal(requests,1);
+  assert.equal(h.get('chooseBackupFolder').textContent,'Change Backup Folder');
+});
 test('one restore settings entry offers file selection and disables an unconnected folder',()=>{
   const h=harness();const before=h.stored();h.click('restoreSettings');
   assert.equal(h.get('restoreSettingsDialog').open,true);
@@ -171,6 +213,17 @@ test('restore settings folder choice uses the connected folder and retains error
 test('read-only case tabs cannot open restore settings or choose a file',()=>{
   const h=harness({locked:true});h.click('restoreSettings');h.click('restoreSettingsFromFile');
   assert.equal(h.get('restoreSettingsDialog').open,false);assert.equal(h.get('settingsFile').clickCount,0);
+});
+test('hiding recent cases collapses both workspace layouts and removes individual export controls',()=>{
+  const h=harness();h.click('toggleHistory');
+  assert.equal(h.get('caseHistory').hidden,true);
+  assert.equal(h.get('caseWorkArea').classList.contains('history-collapsed'),true);
+  assert.equal(h.get('notesLayout').classList.contains('history-collapsed'),true);
+  h.click('toggleHistory');assert.equal(h.get('caseHistory').hidden,false);
+  assert.equal(h.get('caseWorkArea').classList.contains('history-collapsed'),false);
+  const html=fs.readFileSync(require.resolve('../case-notes.html'),'utf8');
+  assert.ok(!html.includes('id="exportCase"'));assert.ok(!html.includes('id="exportCaseJson"'));
+  assert.ok(html.includes('id="printCase"'));
 });
 test('autosave, copying, editing after copy, and save failure recovery',async()=>{
   const h=harness();h.click('newNote');h.edit('notes','Investigation');

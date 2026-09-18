@@ -54,6 +54,14 @@
   const supportsBackupFolder = () => typeof window.showDirectoryPicker === "function" && typeof indexedDB !== "undefined";
   function setBackupFolderStatus(message) {
     if (backupFolderStatus) backupFolderStatus.textContent = message;
+    void refreshBackupFolderButton();
+  }
+  async function refreshBackupFolderButton() {
+    if (!backupFolderButton) return;
+    let connected = false;
+    try { connected = !!backupFolderHandle && await backupFolderHandle.queryPermission({mode:"readwrite"}) === "granted"; } catch {}
+    backupFolderButton.textContent = !backupFolderHandle ? "Set Backup Folder" : connected ? "Change Backup Folder" : "Reconnect Backup Folder";
+    backupFolderButton.title = connected ? "Choose a different backup location." : backupFolderHandle ? "Approve access to your saved backup folder." : "Choose a OneDrive-synced Documents folder for ProSupportToolsBackup.";
   }
   function backupFolderStore(mode, callback) {
     return new Promise((resolve, reject) => {
@@ -187,7 +195,27 @@
       setBackupFolderStatus(error?.message || "Could not restore settings. Confirm customer-config.json exists in ProSupportToolsBackup.");
     }
   }
-  backupFolderButton?.addEventListener("click", chooseBackupFolder);
+  $("openBackupRestore")?.addEventListener("click", async () => {
+    $("backupRestoreDialog").showModal();
+    await refreshBackupFolderButton();
+  });
+  $("closeBackupRestore")?.addEventListener("click", () => $("backupRestoreDialog").close());
+  backupFolderButton?.addEventListener("click", async () => {
+    try {
+      if (!backupFolderHandle || await backupFolderHandle.queryPermission({mode:"readwrite"}) === "granted") {
+        await chooseBackupFolder();
+      } else if (await ensureBackupFolderPermission()) {
+        setBackupFolderStatus("Folder connected. " + backupTimeLabel());
+        await automaticBackup();
+      } else {
+        setBackupFolderStatus("Folder access was not approved. " + backupTimeLabel());
+      }
+    } catch {
+      setBackupFolderStatus("Could not reconnect. Choose your backup folder again.");
+      await chooseBackupFolder();
+    }
+    await refreshBackupFolderButton();
+  });
   restoreSettingsButton?.addEventListener("click", () => {
     if (!writable || copying) return;
     $("restoreSettingsFromFolder").disabled = !backupFolderHandle;
@@ -207,17 +235,9 @@
     $("restoreSettingsDialog").close();
     $("settingsFile").click();
   });
-  $("reconnectBackup")?.addEventListener("click", async () => {
-    try {
-      if (!backupFolderHandle) { await chooseBackupFolder(); return; }
-      if (!await ensureBackupFolderPermission()) { setBackupFolderStatus("Folder access was not approved. " + backupTimeLabel()); return; }
-      setBackupFolderStatus("Folder connected. " + backupTimeLabel());
-      await automaticBackup();
-    } catch { setBackupFolderStatus("Could not reconnect. Use Set Backup Folder to choose the folder again."); }
-  });
   $("downloadSettings")?.addEventListener("click", async () => {
     if (backupBusy) {
-      setBackupFolderStatus("A backup is already in progress. Try Export Settings again when it finishes.");
+      setBackupFolderStatus("A backup is already in progress. Try Backup Settings again when it finishes.");
       return;
     }
     const folder = backupFolderHandle;
@@ -242,8 +262,8 @@
       setBackupFolderStatus("Settings saved to ProSupportToolsBackup/customer-config.json, with a dated settings copy. Case-note backups were not changed.");
     } catch {
       setBackupFolderStatus(folder
-        ? "Settings export did not finish. Check backup folder access and available disk space, then try again."
-        : "Settings export failed. Check browser storage and download access.");
+        ? "Settings backup did not finish. Check backup folder access and available disk space, then try again."
+        : "Settings backup failed. Check browser storage and download access.");
     } finally { backupBusy = false; }
   });
   $("settingsFile")?.addEventListener("change", async () => {
@@ -252,7 +272,25 @@
     try { await restoreSettings(JSON.parse(await file.text())); }
     catch { setBackupFolderStatus("Choose a valid customer-config.json settings backup."); }
   });
-  restoreBackupFolder();
+  async function warnIfBackupsUnavailable() {
+    let connected = false;
+    try { connected = !!backupFolderHandle && await backupFolderHandle.queryPermission({mode:"readwrite"}) === "granted"; } catch {}
+    if (connected) return;
+    $("backupWarningMessage").textContent = backupFolderHandle
+      ? "Automatic backups are paused because your saved backup folder needs permission. Open Configure Backups, then Reconnect Backup Folder to resume."
+      : supportsBackupFolder()
+        ? "Automatic backups are not configured. Choose a backup folder to protect your case notes and site settings."
+        : "Automatic backups are not configured. This browser cannot save directly to a backup folder. Use Chrome or Edge for folder backups, or open Configure Backups to download manual backups.";
+    $("backupWarningDialog").showModal();
+  }
+  $("dismissBackupWarning")?.addEventListener("click", () => $("backupWarningDialog").close());
+  $("configureBackups")?.addEventListener("click", () => {
+    $("backupWarningDialog").close();
+    $("backupRestoreDialog").showModal();
+    void refreshBackupFolderButton();
+  });
+  // Check once per page visit, after the saved folder has been loaded.
+  restoreBackupFolder().then(warnIfBackupsUnavailable);
   setInterval(automaticBackup,60000);
   const actionDockPreferenceKey = "dell-support.case-notes.action-dock-floating";
   const actionDockToggle = $("toggleActionDock");
@@ -281,6 +319,7 @@
   function setHistoryCollapsed(collapsed) {
     $("caseHistory").hidden = collapsed;
     $("notesLayout").classList.toggle("history-collapsed", collapsed);
+    caseWorkArea?.classList.toggle("history-collapsed", collapsed);
     actionDock?.classList.toggle("workspace-width", !collapsed);
     $("toggleHistory").setAttribute("aria-expanded", String(!collapsed));
     $("toggleHistory").textContent = collapsed ? "Show Recent Cases" : "Hide Recent Cases";
@@ -436,7 +475,7 @@
   }
   function controls() {
     ["restoreSettings","restoreSettingsFromFile","restoreSettingsFromFolder"].forEach(id => { if ($(id)) $(id).disabled = !writable || copying || (id === "restoreSettingsFromFolder" && !backupFolderHandle); });
-    ["caseVersions","exportCase","exportCaseJson","printCase"].forEach(id => { if ($(id)) $(id).disabled = !selected() || copying; });
+    ["caseVersions","printCase"].forEach(id => { if ($(id)) $(id).disabled = !selected() || copying; });
     $("backupHistory").disabled = loadFailed || copying;
     $("restoreHistory").disabled = !writable || copying;
     $("fields").disabled = !writable || copying;
@@ -568,20 +607,6 @@
     }));
     if (!versions.length) $("caseRecoveryStatus").textContent = "No earlier versions yet. Versions are captured when changed notes are saved.";
     $("caseRecovery").showModal();
-  });
-  $("exportCase")?.addEventListener("click", () => {
-    const note = selected(); if (!note || (writable && !save())) return;
-    const name = (note.request || note.tag || "note").replace(/[^a-zA-Z0-9_-]/g,"_");
-    try {
-      const content = window.CaseMarkdown.emailHtml(note,Date.now(),state.fieldConfig,true);
-      downloadFile(content.html,"case-"+name+".html","text/html");
-      $("backupStatus").textContent = "Case exported as a standalone HTML document with screenshots. Open it in a browser to view or print.";
-    } catch { $("backupStatus").textContent = "Could not export this case. Your notes were kept."; }
-  });
-  $("exportCaseJson")?.addEventListener("click", () => {
-    const note = selected(); if (!note || (writable && !save())) return;
-    const single = {...CaseNotes.empty(),cases:[note],selected:note.id,fieldConfig:state.fieldConfig,exportType:"single-case"};
-    downloadFile(CaseNotes.backup(single,Date.now()),"case-"+note.id+".json","application/json");
   });
   $("printCase")?.addEventListener("click", async () => {
     const note = selected(); if (!note || (writable && !save())) return;

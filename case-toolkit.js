@@ -2,6 +2,18 @@
 window.CaseToolkit = (() => {
   const core=CaseToolkitCore, $=id=>document.getElementById(id);
   let api;
+  const readTemplates=()=>window.localStorage ? core.loadTemplates(window.localStorage) : {};
+  function refreshTemplates() {
+    const select=$("caseIssueType"),id=api?.current()?.toolkit?.issueType || "general";
+    try {
+      const catalog=core.templateCatalog(readTemplates());
+      select.replaceChildren(...Object.entries(catalog).map(([key,item])=>{const option=document.createElement("option");option.value=key;option.textContent=item.name;return option;}));
+      if (!catalog[id]) { const option=document.createElement("option");option.value=id;option.textContent="Template unavailable — choose another";select.append(option); }
+      select.value=id;
+      $("applyTemplate").disabled=!api?.current() || !api.canEdit() || !catalog[id];
+      if(!catalog[id])$("templateStatus").textContent="This case's template is unavailable. Choose another template or restore your settings. Existing notes are unchanged.";
+    } catch { $("applyTemplate").disabled=true;$("templateStatus").textContent="Template settings could not be read. Restore a valid settings backup before applying templates."; }
+  }
   const notify=text=>$("toolkitStatus").textContent=text;
   const bindings={caseIssueType:"issueType",followupOwner:"owner",followupStatus:"status",caseImpact:"impact",caseQuestions:"questions",customerDraft:"customerDraft",summaryDraft:"summaryDraft"};
   function localDate(iso) {
@@ -11,10 +23,9 @@ window.CaseToolkit = (() => {
   }
   function refreshChecklist() {
     const note=api?.current();if(!note)return;
-    if(!$("logChecklist"))return;
     const data=core.ensure(note);
-    $("templatePreview").textContent=core.templates[data.issueType].prompts.join(" · ");
-    $("logChecklistIntro").textContent=note.os ? `Suggested evidence for ${note.os} · ${core.templates[data.issueType].name}.` : "Select OS/Solution above for product-specific collection guidance.";
+    if(!$("logChecklist"))return;
+    $("logChecklistIntro").textContent=note.os ? `Suggested evidence for ${note.os} · ${core.templates[data.issueType]?.name || 'Custom template'}.` : "Select OS/Solution above for product-specific collection guidance.";
     $("logChecklist").replaceChildren(...core.checklist(note).map(item=>{
       const row=document.createElement("div");row.className="checklist-item";
       const label=document.createElement("label"),check=document.createElement("input");check.type="checkbox";check.checked=!!data.checks[item.id];check.disabled=!api.canEdit();
@@ -29,7 +40,7 @@ window.CaseToolkit = (() => {
     const data=core.ensure(note);
     for(const [id,key] of Object.entries(bindings))$(id).value=data[key];
     $("followupDue").value=localDate(data.due);
-    notify("");refreshChecklist();
+    notify("");$("templateStatus").textContent="";refreshTemplates();refreshChecklist();
   }
   async function copyDraft(key) {
     const note=api.current();if(!note || !api.canEdit())return;
@@ -40,6 +51,9 @@ window.CaseToolkit = (() => {
   }
   function init(options) {
     api=options;
+    window.addEventListener?.("caseTemplatesChanged",refreshTemplates);
+    window.addEventListener?.("supportSettingsRestored",refreshTemplates);
+    window.addEventListener?.("storage",event=>{if(event.key===core.templateStorageKey || event.key===null)refreshTemplates();});
     const dialog=$("toolkitDialog");
     document.querySelectorAll("[data-toolkit]").forEach(button=>{
       button.addEventListener("click",()=>{
@@ -58,7 +72,7 @@ window.CaseToolkit = (() => {
       $(id).addEventListener("input",()=>{
         if(!api.canEdit())return;
         api.mutate(note=>{core.ensure(note)[key]=$(id).value;},false);
-        if(key==="issueType")refreshChecklist();
+        if(key==="issueType") { $("templateStatus").textContent=""; refreshTemplates();refreshChecklist(); }
       });
     });
     $("followupDue").addEventListener("change",()=>{
@@ -69,13 +83,16 @@ window.CaseToolkit = (() => {
     });
     $("applyTemplate").addEventListener("click",()=>{
       if(!api.current() || !api.canEdit())return;
+      try {
+      const overrides=readTemplates(),id=core.ensure(api.current()).issueType;
+      const notesHtml=core.templateHtml(id,overrides),nextHtml=core.templateNextHtml(id,overrides);
       api.mutate(note=>{
-        const data=core.ensure(note);
         // Markdown parses legacy notes; rich HTML remains intact and is sanitized by the editor.
-        note.notes=marked.parse(note.notes,{gfm:true,breaks:true})+core.templateHtml(data.issueType);
-        note.next=marked.parse(note.next,{gfm:true,breaks:true})+'<h3>Next steps</h3><p><strong>Action:</strong> [Add next action]</p><p><strong>Owner:</strong> [Assign owner]</p><p><strong>Follow-up:</strong> [Agree date and time]</p>';
+        note.notes=marked.parse(note.notes,{gfm:true,breaks:true})+notesHtml;
+        if(nextHtml)note.next=marked.parse(note.next,{gfm:true,breaks:true})+nextHtml;
       });
-      api.refreshEditors();notify("Template appended. Replace the bracketed prompts with case details.");
+      api.refreshEditors();$("templateStatus").textContent="Template appended. Existing notes were kept. Replace the bracketed prompts with case details.";
+      } catch(error) { $("templateStatus").textContent=error.message || "Could not apply the template. Existing notes were kept."; }
     });
     for(const [id,key,build] of [["generateCustomer","customerDraft",note=>core.customerUpdate(note,CaseNotes.plainText,$("customerTone").value)],["generateSummary","summaryDraft",note=>core.summary(note,CaseNotes.plainText,CaseNotes.duration(CaseNotes.elapsed(note,Date.now())))]] ) {
       $(id).addEventListener("click",()=>{
@@ -88,6 +105,9 @@ window.CaseToolkit = (() => {
     $("copyCustomer").addEventListener("click",()=>copyDraft("customerDraft"));
     $("copySummary").addEventListener("click",()=>copyDraft("summaryDraft"));
   }
-  return {init,refresh,refreshChecklist,setEditable(value){$("toolkitFields").disabled=!value;
+  return {init,refresh,refreshChecklist,refreshTemplates,canEdit:()=>!!api?.canEdit(),setEditable(value){$("toolkitFields").disabled=!value;
+    $("caseIssueType").disabled=!value || !api?.current();
+    $("manageTemplates").disabled=!value;
+    refreshTemplates();
     document.querySelectorAll("[data-toolkit]").forEach(button=>{button.disabled=!api?.current();});}};
 })();

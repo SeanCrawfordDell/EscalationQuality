@@ -8,22 +8,24 @@
   <title>Case Notes · Dell Pro-Support</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="case-notes.css">
+  <link rel="stylesheet" href="case-notes.css?v=20260918-personal-templates">
   <link rel="stylesheet" href="escalation-demo.css">
   <script src="vendor/marked.umd.js" defer></script>
   <script src="vendor/purify.min.js" defer></script>
   <script src="case-markdown.js" defer></script>
-  <script src="case-toolkit-core.js" defer></script>
+  <script src="case-toolkit-core.js?v=20260918-personal-templates" defer></script>
   <script src="case-notes-core.js" defer></script>
-  <script src="case-settings-core.js" defer></script>
+  <script src="case-settings-core.js?v=20260918-personal-templates" defer></script>
   <script src="devin-prompt-core.js" defer></script>
-  <script src="case-toolkit.js" defer></script>
+<script src="case-toolkit.js?v=20260918-personal-templates" defer></script>
   <link rel="stylesheet" href="log-helper.css">
 <script src="log-helper-core.js" defer></script>
 <script src="log-helper.js" defer></script>
 <script src="case-notes.js" defer></script>
 <script src="case-notes-demo.js" defer></script>
 <script src="case-toolbox-links.js" defer></script>
+<script src="case-template-manager.js" defer></script>
+<script src="case-tooltips.js" defer></script>
 <link rel="stylesheet" href="case-toolbox-links.css">
 </head>
 <body>
@@ -32,23 +34,42 @@
     <div class="theme-controls" role="group" aria-label="Appearance"><button id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button></div>
   </header>
   <main>
-    <section class="hero"><div><p class="eyebrow">DELL PRO-SUPPORT</p><h1>Case Notes</h1><p>Capture the details. Keep the next step clear.</p></div><div class="hero-actions"><button class="button primary" id="newNote" disabled>+ New Note</button><button class="button secondary" id="loadExampleNote" disabled>Load Example</button><button class="button secondary" id="tutorialDemo" type="button">Tutorial Demo</button><button class="button secondary" id="customizeFields" disabled>Customize Fields</button></div></section>
+    <section class="hero"><div><p class="eyebrow">DELL PRO-SUPPORT</p><h1>Case Notes</h1><p>Capture the details. Keep the next step clear.</p></div><div class="hero-actions"><button class="button primary" id="newNote" disabled>+ New Note</button><button class="button secondary" id="loadExampleNote" disabled>Load Example</button><button class="button secondary" id="tutorialDemo" type="button">Tutorial Demo</button><button class="button secondary" id="customizeFields" disabled>Customize Fields</button><button class="button secondary" id="openBackupRestore" type="button" aria-haspopup="dialog" aria-controls="backupRestoreDialog">Backup &amp; Restore</button></div></section>
     <p class="notice" id="lockNotice" role="status">Opening case history…</p>
     <div class="case-work-area" id="caseWorkArea">
     <button class="button secondary" id="toggleHistory" type="button" aria-controls="caseHistory" aria-expanded="true">Hide Recent Cases</button>
     <div class="notes-layout" id="notesLayout">
       <aside class="panel history" id="caseHistory" aria-label="Case history"><div class="history-heading"><h2>Recent cases</h2><span id="caseCount">0 / 100</span></div><label class="field">Search cases<input id="search" type="search" placeholder="Search all notes and custom fields"></label><label class="field history-filter">Show cases<select id="followupFilter"><option value="all">All cases</option><option value="overdue">Overdue follow-ups</option><option value="active">Active cases</option><option value="completed">Completed cases</option></select></label><label class="field">Collection<select id="caseCollection"><option value="cases">Recent cases</option><option value="archive">Archive</option><option value="trash">Trash</option></select></label>
 <label class="field">Sort by<select id="caseSort"><option value="created">Newest created</option><option value="updated">Recently edited</option><option value="due">Follow-up due</option></select></label>
-<p class="history-help">Pinned cases first. Older cases move to Archive after 100 recent cases. Trash is kept until you permanently delete it.</p><div id="historyList"></div><div class="history-backup"><button class="button secondary" id="backupHistory" disabled>Backup History</button><button class="button secondary" id="restoreHistory" disabled>Restore History</button><input id="restoreFile" type="file" accept=".json,application/json" hidden><p id="backupStatus" role="status"></p></div><div class="backup-location"><button class="button secondary" id="chooseBackupFolder" type="button">Set Backup Folder</button><button class="button secondary" id="reconnectBackup" type="button">Reconnect Backup Folder</button><button class="button secondary" id="downloadSettings" type="button">Export Settings</button><input id="settingsFile" type="file" accept=".json,application/json" hidden><button class="button secondary" id="restoreSettings" type="button" aria-haspopup="dialog">Restore Settings</button><p id="backupFolderStatus" class="history-help" role="status">Choose a OneDrive-synced Documents folder. Case Notes will create <strong>ProSupportToolsBackup</strong> there for customer configuration and note backups.</p></div><p class="history-help">Notes autosave in this browser. With folder access approved, automatic backups run every minute when changes are present while this page is open. Clearing browser data removes local history.</p></aside>
+<p class="history-help">Pinned cases first. Older cases move to Archive after 100 recent cases. Trash is kept until you permanently delete it.</p><div id="historyList"></div></aside>
       <section class="panel editor">
         <div id="welcome"><div class="empty-icon">✎</div><h2>A clear record starts here</h2><p>Start a note to begin tracking time and capturing your case.</p><button class="button primary" id="startNote" disabled>Start New Note</button></div>
         <div id="noteEditor" hidden>
-          <div class="editor-heading"><div><div class="workspace-title"><p class="eyebrow">CASE WORKSPACE</p><span>Time Tracking Automatically Starts When Notes are Started or Modified</span></div><span id="saveStatus" role="status">Saved</span><button id="retrySave" class="button secondary" hidden>Retry save</button></div><div class="timer"><span id="timerState">Tracking time</span><strong id="elapsed">00:00:00</strong><span class="timer-total">Total time on case <strong id="totalElapsed">00:00:00</strong></span><div class="timer-actions"><span class="timer-help">Time Tracking Stops When the Copy to Lightning Button is Clicked</span><button class="button secondary" id="stopTimer" type="button" disabled>Stop Time Tracking</button></div></div></div>
-          <div class="case-utilities" role="group" aria-label="Case recovery and export">
+          <div class="editor-heading">
+            <div class="workspace-title">
+              <p class="eyebrow">CASE WORKSPACE</p>
+              <span id="saveStatus" role="status">Saved</span>
+              <button class="button secondary" type="button" data-toolkit="followup" aria-haspopup="dialog" aria-controls="toolkitDialog" title="Set a follow-up owner, due date, and status for this case." disabled>Set Followup</button>
+              <button id="retrySave" class="button secondary" hidden>Retry save</button>
+            </div>
+            <div class="timer">
+              <div class="timer-session"><span id="timerState">Tracking time</span><strong id="elapsed">00:00:00</strong></div>
+              <div class="timer-total"><span>Total time on case</span><strong id="totalElapsed">00:00:00</strong></div>
+              <button class="button secondary" id="stopTimer" type="button" disabled>Stop Tracking</button>
+              <button class="timer-info" type="button" aria-label="How time tracking works" title="Time tracking starts automatically when notes are started or modified. Copy to Lightning stops the timer. You can also use Stop Tracking.">ⓘ</button>
+            </div>
+          </div>
+          <div class="case-workspace-toolbar">
+            <div class="case-issue-picker">
+              <label class="field">What type of issue are you troubleshooting?<select id="caseIssueType"><option value="general">General investigation</option><option value="boot">Boot failure</option><option value="crash">Crash / unexpected restart</option><option value="network">Network connectivity</option><option value="performance">Performance degradation</option></select></label>
+              <button class="button secondary" id="applyTemplate" type="button" title="Append troubleshooting prompts and next steps without replacing existing notes.">Apply template</button>
+              <button class="button secondary" id="manageTemplates" type="button" aria-haspopup="dialog" aria-controls="templateManager" title="Create personal templates or edit and rename built-in templates.">Manage templates</button>
+              <p id="templateStatus" role="status"></p>
+            </div>
+            <div class="case-utilities" role="group" aria-label="Case recovery and printing">
             <button class="button secondary" id="caseVersions" type="button">Version History</button>
-            <button class="button secondary" id="exportCase" type="button">Export This Case</button>
-            <button class="button secondary" id="exportCaseJson" type="button">Export Case JSON</button>
             <button class="button secondary" id="printCase" type="button">Print / PDF</button>
+            </div>
           </div>
           <form id="noteForm"><fieldset id="fields" disabled>
             <section class="note-section" id="caseDetailsSection"><button type="button" class="section-toggle" id="caseDetailsToggle" aria-expanded="true" aria-controls="caseDetailsGrid"><span class="section-arrow" aria-hidden="true">▾</span><span>Case Details</span></button><div class="field-grid section-content" id="caseDetailsGrid">
@@ -69,13 +90,13 @@
             <div class="field wide rich-field"><label id="nextLabel">Action Plan / Next Steps</label><div class="rich-toolbar" id="nextToolbar" role="toolbar" aria-label="Action Plan / Next Steps formatting"><button type="button" class="button secondary" data-command="bold" aria-label="Bold">Bold</button><button type="button" class="button secondary" data-command="italic" aria-label="Italic">Italic</button><button type="button" class="button secondary" data-command="underline" aria-label="Underline">Underline</button><button type="button" class="button secondary" data-command="insertUnorderedList" aria-label="Bullets">Bullets</button><button type="button" class="button secondary" data-command="insertOrderedList" aria-label="Numbered list">Numbered list</button><button type="button" class="button secondary" data-command="createLink" aria-label="Link">Link</button><button type="button" class="button secondary" data-command="removeFormat" aria-label="Clear formatting">Clear formatting</button></div><div id="nextRich" class="rich-editor" contenteditable="false" role="textbox" aria-multiline="true" aria-labelledby="nextLabel" aria-describedby="nextHelp"></div><textarea id="next" hidden></textarea><small id="nextHelp">Format your notes with the toolbar. Paste screenshots with Ctrl+V / ⌘V. Click an image, then drag its bottom-right corner to resize.</small><p id="nextImageStatus" class="image-status" role="status"></p></div>
             </div></section>
           </fieldset></form>
-          <div class="copy-actions" id="copyActions"><nav class="toolkit-nav" aria-label="Case Toolkit"><button class="button secondary" type="button" data-toolkit="templates" aria-haspopup="dialog" aria-controls="toolkitDialog" disabled>Templates</button><button class="button secondary" type="button" data-toolkit="followup" aria-haspopup="dialog" aria-controls="toolkitDialog" disabled>Follow-ups</button><button class="button secondary" type="button" data-toolkit="customer" aria-haspopup="dialog" aria-controls="toolkitDialog" disabled>Customer Update</button><button class="button secondary" type="button" data-toolkit="summary" aria-haspopup="dialog" aria-controls="toolkitDialog" disabled>Handoff Summary</button><button class="button secondary" id="toggleActionDock" type="button" aria-pressed="false">Stop floating</button></nav><p id="copyStatus" role="status">Copy all fields and tracked time as plain text.</p><div class="note-actions"><button class="button secondary" id="emailNote" type="button" disabled>Email to Case</button><button class="button secondary" id="escalateNote" disabled>Escalate to DE</button><button class="button primary" id="copyNote" disabled>Copy to Lightning</button></div><div class="devin-copy"><label class="field">Ask AI to<select id="devinTask"></select></label><button class="button secondary" id="manageAiTasks" type="button">Add your Own AI Prompt/skills</button><button class="button secondary" id="copyDevin" type="button" disabled>Copy to AI</button><p id="devinStatus" role="status">Copies a prompt for AI tools. Review the included case data before pasting.</p></div></div>
+          <div class="copy-actions" id="copyActions"><nav class="toolkit-nav" aria-label="Case Toolkit"><button class="button secondary" type="button" data-toolkit="customer" aria-haspopup="dialog" aria-controls="toolkitDialog" disabled>Customer Update</button><button class="button secondary" type="button" data-toolkit="summary" aria-haspopup="dialog" aria-controls="toolkitDialog" disabled>Handoff Summary</button><button class="button secondary" id="toggleActionDock" type="button" aria-pressed="false">Stop floating</button></nav><p id="copyStatus" role="status">Copy all fields and tracked time as plain text.</p><div class="note-actions"><button class="button secondary" id="emailNote" type="button" disabled>Email to Case</button><button class="button secondary" id="escalateNote" disabled>Escalate to DE</button><button class="button primary" id="copyNote" disabled>Copy to Lightning</button></div><div class="devin-copy"><label class="field">Ask AI to<select id="devinTask"></select></label><button class="button secondary" id="manageAiTasks" type="button">Add your Own AI Prompt/skills</button><button class="button secondary" id="copyDevin" type="button" disabled>Copy to AI</button><p id="devinStatus" role="status">Copies a prompt for AI tools. Review the included case data before pasting.</p></div></div>
         </div>
       </section>
     </div>
     </div>
   </main>
-<dialog id="toolkitDialog" class="toolkit-dialog" aria-labelledby="toolkitTitle"><div class="toolkit-dialog-heading"><h2 id="toolkitTitle">Case Toolkit</h2><button id="closeToolkit" class="button secondary" type="button" aria-label="Close Case Toolkit">Close</button></div><p class="toolkit-help">Details are saved with the current case.</p><fieldset id="toolkitFields" disabled><section id="toolkit-templates" data-title="Case note templates" hidden><div class="toolkit-content"><label class="field">Issue type / template<select id="caseIssueType"><option value="general">General investigation</option><option value="boot">Boot failure</option><option value="crash">Crash / unexpected restart</option><option value="network">Network connectivity</option><option value="performance">Performance degradation</option></select></label><p id="templatePreview" class="toolkit-help"></p><button class="button secondary" type="button" id="applyTemplate">Append template to notes</button><small>Adds prompts and next-step placeholders. Existing notes and screenshots are kept.</small></div></section><section id="toolkit-followup" data-title="Follow-up tracker" hidden><div class="toolkit-content field-grid"><label class="field">Owner<input id="followupOwner" placeholder="Person or team responsible"></label><label class="field">Due date and time<input id="followupDue" type="datetime-local"></label><label class="field">Status<select id="followupStatus"><option>Open</option><option>In progress</option><option>Waiting on customer</option><option>Completed</option></select></label><p class="toolkit-help">Times use this device’s local time zone. Overdue cases are highlighted in Recent Cases.</p></div></section><section id="toolkit-customer" data-title="Customer update generator" hidden><div class="toolkit-content"><p class="toolkit-help">Build an editable update from the case issue, investigation, and next steps. Review wording and remove internal details before sharing.</p><label class="field">Tone<select id="customerTone"><option value="clear">Clear and professional</option><option value="reassuring">Reassuring</option><option value="concise">Concise</option></select></label><button class="button secondary" type="button" id="generateCustomer">Generate customer update</button><label class="field">Customer update draft<textarea id="customerDraft" rows="12" placeholder="Generate an update, then edit it here."></textarea></label><p class="toolkit-help">Before sending, remove internal system names, unverified causes, and collection instructions.</p><button class="button secondary" type="button" id="copyCustomer">Copy customer update</button></div></section><section id="toolkit-summary" data-title="Case summary builder" hidden><div class="toolkit-content"><label class="field">Business impact<textarea id="caseImpact" placeholder="Who or what is affected?"></textarea></label><label class="field">Remaining questions<textarea id="caseQuestions" placeholder="What still needs to be answered?"></textarea></label><button class="button secondary" type="button" id="generateSummary">Build handoff summary</button><label class="field">Handoff summary draft<textarea id="summaryDraft" rows="14" placeholder="Build a summary, then edit it here."></textarea></label><button class="button secondary" type="button" id="copySummary">Copy handoff summary</button><small>Drafts use saved case details and your current edits. Regenerate after changing the case to refresh a draft.</small></div></section></fieldset><p id="toolkitStatus" role="status" class="toolkit-help"></p></dialog>
+<dialog id="toolkitDialog" class="toolkit-dialog" aria-labelledby="toolkitTitle"><div class="toolkit-dialog-heading"><h2 id="toolkitTitle">Case Toolkit</h2><button id="closeToolkit" class="button secondary" type="button" aria-label="Close Case Toolkit">Close</button></div><p class="toolkit-help">Details are saved with the current case.</p><fieldset id="toolkitFields" disabled><section id="toolkit-followup" data-title="Follow-up tracker" hidden><div class="toolkit-content field-grid"><label class="field">Owner<input id="followupOwner" placeholder="Person or team responsible"></label><label class="field">Due date and time<input id="followupDue" type="datetime-local"></label><label class="field">Status<select id="followupStatus"><option>Open</option><option>In progress</option><option>Waiting on customer</option><option>Completed</option></select></label><p class="toolkit-help">Times use this device’s local time zone. Overdue cases are highlighted in Recent Cases.</p></div></section><section id="toolkit-customer" data-title="Customer update generator" hidden><div class="toolkit-content"><p class="toolkit-help">Build an editable update from the case issue, investigation, and next steps. Review wording and remove internal details before sharing.</p><label class="field">Tone<select id="customerTone"><option value="clear">Clear and professional</option><option value="reassuring">Reassuring</option><option value="concise">Concise</option></select></label><button class="button secondary" type="button" id="generateCustomer">Generate customer update</button><label class="field">Customer update draft<textarea id="customerDraft" rows="12" placeholder="Generate an update, then edit it here."></textarea></label><p class="toolkit-help">Before sending, remove internal system names, unverified causes, and collection instructions.</p><button class="button secondary" type="button" id="copyCustomer">Copy customer update</button></div></section><section id="toolkit-summary" data-title="Case summary builder" hidden><div class="toolkit-content"><label class="field">Business impact<textarea id="caseImpact" placeholder="Who or what is affected?"></textarea></label><label class="field">Remaining questions<textarea id="caseQuestions" placeholder="What still needs to be answered?"></textarea></label><button class="button secondary" type="button" id="generateSummary">Build handoff summary</button><label class="field">Handoff summary draft<textarea id="summaryDraft" rows="14" placeholder="Build a summary, then edit it here."></textarea></label><button class="button secondary" type="button" id="copySummary">Copy handoff summary</button><small>Drafts use saved case details and your current edits. Regenerate after changing the case to refresh a draft.</small></div></section></fieldset><p id="toolkitStatus" role="status" class="toolkit-help"></p></dialog>
 <dialog id="logHelperDialog" class="log-helper-dialog" aria-labelledby="logHelperTitle">
 <div class="log-helper-heading"><h2 id="logHelperTitle">Which logs should I collect?</h2><button class="button secondary" id="closeLogHelper" type="button">Close</button></div>
 <p>Choose the scenario to build a collection plan. Changing these choices does not change your case fields.</p>
@@ -115,6 +136,16 @@
   <p id="caseRecoveryStatus" role="status"></p>
   <button class="button secondary" id="closeCaseRecovery" type="button">Close</button>
 </dialog>
+<dialog id="backupWarningDialog" class="toolkit-dialog" aria-labelledby="backupWarningTitle" aria-describedby="backupWarningMessage backupWarningHelp">
+<h2 id="backupWarningTitle">Automatic backups need attention</h2>
+<p id="backupWarningMessage"></p>
+<p id="backupWarningHelp">Without folder backups, your latest notes and settings may exist only in this browser. Clearing browser data or losing this device could lose that data. We recommend a work-approved, OneDrive-synced folder for ProSupportToolsBackup. Automatic backups run while Case Notes is open and folder access is approved.</p>
+<div class="backup-location"><button class="button primary" id="configureBackups" type="button">Configure Backups</button><button class="button secondary" id="dismissBackupWarning" type="button">Continue Without Backups</button></div>
+</dialog>
+<dialog id="backupRestoreDialog" class="toolkit-dialog" aria-labelledby="backupRestoreTitle">
+<div class="toolkit-dialog-heading"><h2 id="backupRestoreTitle">Backup &amp; Restore</h2><button class="button secondary" id="closeBackupRestore" type="button">Close</button></div>
+<div class="history-backup"><button class="button secondary" id="backupHistory" disabled>Backup History</button><button class="button secondary" id="restoreHistory" disabled>Restore History</button><input id="restoreFile" type="file" accept=".json,application/json" hidden><p id="backupStatus" role="status"></p></div><div class="backup-location"><button class="button secondary" id="chooseBackupFolder" type="button">Set Backup Folder</button><button class="button secondary" id="downloadSettings" type="button">Backup Settings</button><input id="settingsFile" type="file" accept=".json,application/json" hidden><button class="button secondary" id="restoreSettings" type="button" aria-haspopup="dialog">Restore Settings</button><p id="backupFolderStatus" class="history-help" role="status">Choose a OneDrive-synced Documents folder. Case Notes will create <strong>ProSupportToolsBackup</strong> there for customer configuration and note backups.</p></div><p class="history-help">Notes autosave in this browser. With folder access approved, automatic backups run every minute when changes are present while this page is open. Clearing browser data removes local history.</p>
+</dialog>
 <dialog id="restoreSettingsDialog" class="toolkit-dialog" aria-labelledby="restoreSettingsTitle" aria-describedby="restoreSettingsHelp">
   <h2 id="restoreSettingsTitle">Restore Settings</h2>
   <p id="restoreSettingsHelp">Choose where to restore your settings from. You will review a confirmation before settings are replaced. Case notes are kept.</p>
@@ -124,6 +155,21 @@
   </div>
   <p id="restoreSettingsFolderHint" class="history-help"></p>
   <button class="button secondary" id="cancelRestoreSettings" type="button">Cancel</button>
+</dialog>
+<dialog id="templateManager" class="toolkit-dialog" aria-labelledby="templateManagerTitle">
+  <div class="toolkit-dialog-heading"><h2 id="templateManagerTitle">Manage templates</h2><button class="button secondary" id="closeTemplateManager" type="button">Close</button></div>
+  <p class="toolkit-help">Personal to this browser and included in settings backups. Editing a template never changes existing case notes.</p>
+  <label class="field">Choose a template<select id="templateList"></select></label>
+  <button class="button secondary" id="newTemplate" type="button">New template</button>
+  <form id="templateEditorForm">
+    <h3 id="templateEditHeading">Edit template</h3>
+    <label class="field">Template name<input id="templateName" required maxlength="100" autocomplete="off"></label>
+    <label class="field">Note text / prompts<textarea id="templateNotes" rows="7" required maxlength="20000" placeholder="Enter your troubleshooting prompts, one per line."></textarea></label>
+    <label class="field">Next steps (optional)<textarea id="templateNext" rows="4" maxlength="20000" placeholder="Enter next steps to append when this template is applied."></textarea></label>
+    <p class="toolkit-help">Use plain text and line breaks. HTML is treated as text. Templates are appended only when you click Apply template.</p>
+    <div class="case-utilities"><button class="button primary" type="submit">Save template</button><button class="button secondary" id="resetTemplate" type="button">Reset to default</button><button class="button secondary" id="deleteTemplate" type="button" hidden>Delete template</button></div>
+  </form>
+  <p id="templateManagerStatus" role="status"></p>
 </dialog>
 <div id="casePrint" hidden></div>
 <dialog id="fieldCustomizer" class="field-customizer-dialog" aria-labelledby="customizerTitle">
