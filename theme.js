@@ -33,6 +33,12 @@
       navigation.defer = true;
       document.head.append(navigation);
     }
+    if (!document.querySelector('link[href="header-layout.css"]')) {
+      const layout = document.createElement("link");
+      layout.rel = "stylesheet";
+      layout.href = "header-layout.css";
+      document.head.append(layout);
+    }
     document.getElementById("themeToggle")?.addEventListener("click", () => {
       save(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
     });
