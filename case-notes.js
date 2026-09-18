@@ -7,6 +7,27 @@
   const actionDock = document.getElementById("copyActions");
   const caseNotesHero = document.querySelector?.(".hero");
   if (caseNotesHero && actionDock) caseNotesHero.after(actionDock);
+  const actionDockPreferenceKey = "dell-support.case-notes.action-dock-floating";
+  const actionDockToggle = $("toggleActionDock");
+  let actionDockFloating = true;
+  try { actionDockFloating = localStorage.getItem(actionDockPreferenceKey) !== "false"; } catch { /* Keep floating as the default. */ }
+  const rightRailQuery = window.matchMedia?.("(min-width: 1500px) and (min-height: 780px)");
+  function updateActionDockMode() {
+    if (!actionDock) return;
+    actionDock.classList.toggle("floating-disabled", !actionDockFloating);
+    actionDock.classList.toggle("right-rail", actionDockFloating && Boolean(rightRailQuery?.matches));
+    if (actionDockToggle) {
+      actionDockToggle.textContent = actionDockFloating ? "Stop floating" : "Enable floating";
+      actionDockToggle.setAttribute("aria-pressed", String(!actionDockFloating));
+    }
+  }
+  actionDockToggle?.addEventListener("click", () => {
+    actionDockFloating = !actionDockFloating;
+    try { localStorage.setItem(actionDockPreferenceKey, String(actionDockFloating)); } catch { /* This visit still honors the choice. */ }
+    updateActionDockMode();
+  });
+  rightRailQuery?.addEventListener?.("change", updateActionDockMode);
+  updateActionDockMode();
   let loadFailed = false;
   const sidebarKey = "dell-support.case-history-collapsed";
   function setHistoryCollapsed(collapsed) {
