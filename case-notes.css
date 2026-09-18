@@ -13,6 +13,8 @@
 .history-heading { margin-bottom:20px; }
 .history-heading span,.history-help { color:var(--muted); font-size:12px; }
 .history-help { line-height:1.6; margin:14px 0; }
+.backup-location { border-top:1px solid var(--line); margin-top:18px; padding-top:16px; }
+.backup-location .history-help { margin-bottom:0; }
 #historyList { max-height:560px; overflow:auto; display:grid; gap:8px; }
 .case-item { text-align:left; cursor:pointer; border:1px solid var(--line); background:var(--input-bg); color:var(--ink); border-radius:8px; padding:12px; width:100%; }
 .case-item[aria-current="true"] { border-color:var(--blue); background:var(--section-number-bg); }

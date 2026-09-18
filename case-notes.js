@@ -13,7 +13,8 @@
     tutorialDemo: "See a guided tour of Case Notes and the toolbox.",
     customizeFields: "Choose which case fields appear and their order.",
     toggleHistory: "Show or hide the list of saved case notes.",
-    backupHistory: "Download a backup of all saved case notes.",
+    backupHistory: "Save a backup of all case notes and customer configuration.",
+    chooseBackupFolder: "Choose a OneDrive-synced Documents folder for ProSupportToolsBackup.",
     restoreHistory: "Restore case notes from a backup file.",
     stopTimer: "Stop time tracking for the current case.",
     emailNote: "Download the case notes as an email draft with screenshots.",
@@ -39,6 +40,74 @@
     });
   }
   addButtonTooltips();
+  const backupFolderButton = $("chooseBackupFolder");
+  const backupFolderStatus = $("backupFolderStatus");
+  const backupFolderDbName = "dell-support.case-notes.backup-folder";
+  let backupFolderHandle = null;
+  const supportsBackupFolder = () => typeof window.showDirectoryPicker === "function" && typeof indexedDB !== "undefined";
+  function setBackupFolderStatus(message) {
+    if (backupFolderStatus) backupFolderStatus.textContent = message;
+  }
+  function backupFolderStore(mode, callback) {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(backupFolderDbName, 1);
+      request.onupgradeneeded = () => request.result.createObjectStore("folders");
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const transaction = request.result.transaction("folders", mode);
+        const store = transaction.objectStore("folders");
+        const result = callback(store);
+        if (result?.onsuccess !== undefined) {
+          result.onsuccess = () => resolve(result.result);
+          result.onerror = () => reject(result.error);
+        } else transaction.oncomplete = () => resolve(result);
+        transaction.onerror = () => reject(transaction.error);
+      };
+    });
+  }
+  async function restoreBackupFolder() {
+    if (!supportsBackupFolder()) return;
+    try {
+      backupFolderHandle = await backupFolderStore("readonly", store => store.get("pros-support-tools"));
+      if (backupFolderHandle) setBackupFolderStatus("Backups and customer configuration are stored in ProSupportToolsBackup. Choose a OneDrive-synced Documents folder to keep them protected.");
+    } catch { backupFolderHandle = null; }
+  }
+  async function storeBackupFolder(handle) {
+    await backupFolderStore("readwrite", store => store.put(handle, "pros-support-tools"));
+  }
+  async function ensureBackupFolderPermission() {
+    if (!backupFolderHandle) return false;
+    const options = { mode: "readwrite" };
+    if (await backupFolderHandle.queryPermission(options) === "granted") return true;
+    return (await backupFolderHandle.requestPermission(options)) === "granted";
+  }
+  async function chooseBackupFolder() {
+    if (!supportsBackupFolder()) {
+      setBackupFolderStatus("This browser cannot store directly in a selected folder. Use Chrome or Edge, or download a backup manually.");
+      return false;
+    }
+    try {
+      const selectedFolder = await window.showDirectoryPicker({ id: "pro-support-tools-backups", mode: "readwrite" });
+      backupFolderHandle = await selectedFolder.getDirectoryHandle("ProSupportToolsBackup", { create:true });
+      await storeBackupFolder(backupFolderHandle);
+      setBackupFolderStatus("Backup folder ready. Case Notes will save customer configuration and note backups in ProSupportToolsBackup.");
+      return true;
+    } catch (error) {
+      if (error?.name !== "AbortError") setBackupFolderStatus("Backup folder was not set. You can still download a backup manually.");
+      return false;
+    }
+  }
+  async function writeBackupToFolder(text, fileName) {
+    if (!backupFolderHandle || !await ensureBackupFolderPermission()) return false;
+    const config = JSON.stringify({ exportedAt:new Date().toISOString(), fieldConfig:state.fieldConfig }, null, 2);
+    const configWriter = await (await backupFolderHandle.getFileHandle("customer-config.json", { create:true })).createWritable();
+    await configWriter.write(config); await configWriter.close();
+    const backupWriter = await (await backupFolderHandle.getFileHandle(fileName, { create:true })).createWritable();
+    await backupWriter.write(text); await backupWriter.close();
+    return true;
+  }
+  backupFolderButton?.addEventListener("click", chooseBackupFolder);
+  restoreBackupFolder();
   const actionDockPreferenceKey = "dell-support.case-notes.action-dock-floating";
   const actionDockToggle = $("toggleActionDock");
   let actionDockFloating = true;
@@ -279,17 +348,22 @@
     $("copyStatus").textContent = "Copy all fields and tracked time as plain text.";
     $("tag").focus();
   }
-  $("backupHistory").addEventListener("click", () => {
+  $("backupHistory").addEventListener("click", async () => {
     if (loadFailed || copying) return;
     try {
       const text = CaseNotes.backup(state, Date.now());
+      const fileName = "case-history-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+      if (backupFolderHandle && await writeBackupToFolder(text, fileName)) {
+        $("backupStatus").textContent = `Backup saved to ProSupportToolsBackup: ${state.cases.length} cases and customer configuration. Restored timers will be stopped.`;
+        return;
+      }
       const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
       const link = document.createElement("a");
       link.href = url;
-      link.download = "case-history-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+      link.download = fileName;
       document.body.append(link); link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60000);
-      $("backupStatus").textContent = `Backup download started: ${state.cases.length} cases, including unsaved edits. Restored timers will be stopped.`;
+      $("backupStatus").textContent = `Backup download started: ${state.cases.length} cases, including unsaved edits. Set a backup folder to also save customer configuration in ProSupportToolsBackup.`;
     } catch {
       $("backupStatus").textContent = "Backup could not be created. Your history has not changed. Please try again.";
     }
