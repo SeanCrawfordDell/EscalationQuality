@@ -10,15 +10,25 @@
   <title>Dell Pro-Support Technical Support Assistant</title>
   <link rel="stylesheet" href="landing.css">
   <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="resource.css">
 </head>
 <body>
   <a class="skip-link" href="#tools">Skip to tools</a>
   <header class="header">
     <a class="brand" href="index.html" aria-label="Dell Pro-Support home"><span class="dell">DELL</span><span class="brand-divider"></span><span>Pro-Support</span></a>
     <nav class="primary-nav" aria-label="Primary navigation">
-      <a href="#knowledge">Knowledge</a>
-      <a href="#ai-resources">AI Resources</a>
-      <a href="#training">Training</a>
+      <div class="menu-item">
+        <a class="menu-trigger" href="knowledge.html">Knowledge <span aria-hidden="true">⌄</span></a>
+        <div class="submenu" role="menu"><a href="knowledge.html" role="menuitem">Knowledge hub</a></div>
+      </div>
+      <div class="menu-item">
+        <a class="menu-trigger" href="ai-resources.html">AI Resources <span aria-hidden="true">⌄</span></a>
+        <div class="submenu" role="menu"><a href="ai-resources.html" role="menuitem">AI resources hub</a></div>
+      </div>
+      <div class="menu-item">
+        <a class="menu-trigger" href="training.html">Training <span aria-hidden="true">⌄</span></a>
+        <div class="submenu" role="menu"><a href="training.html" role="menuitem">Training hub</a></div>
+      </div>
     </nav>
     <div class="theme-controls" role="group" aria-label="Appearance">
         <button class="theme-switch" id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button>
