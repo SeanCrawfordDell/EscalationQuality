@@ -52,7 +52,8 @@
       </div>
     </section>
     <section class="tools" id="tools" aria-labelledby="tools-title">
-      <div class="section-header"><div><p class="eyebrow">YOUR TOOLKIT</p><h2 id="tools-title">The right tool. The next step.</h2><p>Purpose-built assistance for your support workflow.</p></div><span class="count" id="toolCount">5 tools available</span></div>
+      <div class="section-header"><div><p class="eyebrow">YOUR TOOLKIT</p><h2 id="tools-title">The right tool. The next step.</h2><p>Purpose-built assistance for your support workflow.</p></div><span class="count" id="toolCount">4 tools available</span></div>
+      <section class="pinned-tools" id="pinnedTools" hidden aria-labelledby="pinned-title"><h2 id="pinned-title">Pinned to your toolkit</h2><div class="tool-grid" id="pinnedGrid"></div></section>
       <div class="catalog-controls">
         <label class="search-field" for="toolSearch"><span class="visually-hidden">Search tools</span><span aria-hidden="true">⌕</span><input id="toolSearch" type="search" placeholder="Search tools" autocomplete="off"></label>
         <div class="view-switcher" role="group" aria-label="Tool catalog view">
@@ -65,27 +66,22 @@
         <a class="tool-card active" href="escalation-quality.html">
           <div class="card-top"><span class="tool-icon"><svg viewBox="0 0 32 32" aria-hidden="true" fill="currentColor"><path d="M12 4h8v8h8v8h-8v8h-8v-8H4v-8h8z"/></svg></span><span class="badge">Available</span></div>
           <p class="category">ESCALATION READINESS</p><h3>DE Escalation Request</h3><p>Review your escalation before the handoff. Check for missing details, assess readiness, and give senior technicians the context they need.</p>
-          <div class="tags"><span>Readiness score</span><span>Actionable feedback</span></div><div class="card-action">Launch tool <span aria-hidden="true">↗</span></div>
+          <div class="tags"><span>Readiness score</span><span>Actionable feedback</span></div><div class="card-action">Launch tool <span aria-hidden="true">↗</span></div><button class="pin-button" type="button" data-pin-id="escalation">Pin to toolkit</button>
         </a>
         <a class="tool-card active" href="case-notes.html">
           <div class="card-top"><span class="tool-icon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="7" y="5" width="18" height="24" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 4h8v5h-8zM11 18l3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span class="badge">Available</span></div>
           <p class="category">CASE DOCUMENTATION</p><h3>Case Notes</h3><p>Capture your investigation and next steps. Never lose your notes with the backup/restore feature. Automated templates and AI-assisted summaries and reviews. Follow-up and case alerts. Email to case, and a simple Copy to Lightning option. Convert case notes into well-written DE escalations in a single click.</p>
-          <div class="tags"><span>Automatic saving</span><span>Time tracking</span></div><div class="card-action">Launch tool <span aria-hidden="true">↗</span></div>
+          <div class="tags"><span>Automatic saving</span><span>Time tracking</span></div><div class="card-action">Launch tool <span aria-hidden="true">↗</span></div><button class="pin-button" type="button" data-pin-id="case-notes">Pin to toolkit</button>
         </a>
         <a class="tool-card active" href="support-trends.html">
           <div class="card-top"><span class="tool-icon" aria-hidden="true">↗</span><span class="badge">Available</span></div>
           <p class="category">CASE QUALITY</p><h3>Support Trends</h3><p>See evidence gaps, follow-up risk, and recurring issue patterns from the cases saved in this browser.</p>
-          <div class="tags"><span>Evidence gaps</span><span>Local dashboard</span></div><div class="card-action">Open trends <span aria-hidden="true">↗</span></div>
-        </a>
-        <a class="tool-card active" href="https://github.com/DellProSupportGse/Tools" target="_blank" rel="noopener noreferrer">
-          <div class="card-top"><span class="tool-icon" aria-hidden="true">↗</span><span class="badge">External resource</span></div>
-          <p class="category">MICROSOFT SUPPORT</p><h3>Microsoft Support Tools</h3><p>Open the DellProSupportGse tools repository on GitHub to access Microsoft support tools.</p>
-          <div class="tags"><span>GitHub repository</span><span>Opens in a new tab</span></div><div class="card-action">Open support tools <span aria-hidden="true">↗</span></div>
+          <div class="tags"><span>Evidence gaps</span><span>Local dashboard</span></div><div class="card-action">Open trends <span aria-hidden="true">↗</span></div><button class="pin-button" type="button" data-pin-id="trends">Pin to toolkit</button>
         </a>
         <a class="tool-card active" href="https://seancrawforddell.github.io/DellSupportoolRepository/#/tools" target="_blank" rel="noopener noreferrer">
           <div class="card-top"><span class="tool-icon" aria-hidden="true">▦</span><span class="badge">Available</span></div>
           <p class="category">SUPPORT TOOL CATALOG</p><h3>ISG Tools Catalog</h3><p>Browse the shared catalog of ISG support tools, instructions, usage, and active requests.</p>
-          <div class="tags"><span>Tool catalog</span><span>Opens in a new tab</span></div><div class="card-action">Open Tools Catalog <span aria-hidden="true">↗</span></div>
+          <div class="tags"><span>Tool catalog</span><span>Opens in a new tab</span></div><div class="card-action">Open Tools Catalog <span aria-hidden="true">↗</span></div><button class="pin-button" type="button" data-pin-id="catalog">Pin to toolkit</button>
         </a>
       </div>
     </section>

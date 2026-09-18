@@ -34,4 +34,16 @@
   search.addEventListener('input', updateResults);
   gridButton.addEventListener('click', () => setView('grid'));
   listButton.addEventListener('click', () => setView('list'));
+  const renderPins = () => {
+    const section = document.querySelector('#pinnedTools');
+    const pinnedGrid = document.querySelector('#pinnedGrid');
+    const resources = window.supportResources || [];
+    let pins = [];
+    try { pins = JSON.parse(localStorage.getItem('dell-support.pinned-resources.v1') || '[]'); } catch {}
+    const selected = resources.filter(resource => pins.includes(resource.id));
+    section.hidden = !selected.length;
+    pinnedGrid.innerHTML = selected.map(resource => `<a class="tool-card active" href="${resource.href}"><p class="category">${resource.category}</p><h3>${resource.title}</h3><p>${resource.description}</p><div class="card-action">Open resource <span aria-hidden="true">↗</span></div></a>`).join('');
+  };
+  window.addEventListener('pinnedresourceschanged', renderPins);
+  setTimeout(renderPins, 0);
 })();

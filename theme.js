@@ -27,6 +27,12 @@
   apply(); // Run before styles render to avoid a flash of the wrong theme.
   document.addEventListener("DOMContentLoaded", () => {
     apply();
+    if (!document.querySelector('script[src="site-navigation.js"]')) {
+      const navigation = document.createElement("script");
+      navigation.src = "site-navigation.js";
+      navigation.defer = true;
+      document.head.append(navigation);
+    }
     document.getElementById("themeToggle")?.addEventListener("click", () => {
       save(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
     });
