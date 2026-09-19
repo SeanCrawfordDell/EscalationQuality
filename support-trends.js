@@ -14,10 +14,14 @@
   }
   function load() { try{return CaseNotes.parse(localStorage.getItem(key)).cases;} catch{return null;} }
   function run() {
+    $("dashboard").hidden=true;$("emptyState").hidden=true;
     const cases=load();if(cases===null){$("emptyState").hidden=false;$("emptyState").querySelector("p").textContent="Case history could not be read in this browser. Open Case Notes to protect and restore it.";return;}
     if(!cases.length){$("emptyState").hidden=false;return;}
     $("dashboard").hidden=false;const now=Date.now(), active=cases.filter(note=>note.toolkit.status!=="Completed"), overdue=active.filter(note=>CaseToolkitCore.overdue(note,now));
     $("totalCases").textContent=cases.length;$("activeCases").textContent=active.length;$("overdueCases").textContent=overdue.length;
+    const prevention=CaseWorkflowCore.prevention(cases);
+    $("preventionSummary").textContent=`${prevention.repeats.length} cases marked as repeat contacts · ${prevention.unverified.length} completed cases with verification details missing (including older records).`;
+    $("preventionGroups").replaceChildren(...prevention.groups.map(group=>{const p=document.createElement("p");p.textContent=`${group.length} similar cases: ${group[0].platform} · ${group[0].os} · ${group[0].osVersion || "Version not recorded"} · ${labels[group[0].toolkit.issueType] || "Custom issue"}. Review SRs: ${group.map(n=>n.request || "Unnumbered").join(", ")}`;return p;}));
     const statuses={};cases.forEach(note=>{const value=text(note.toolkit.status)||"Open";statuses[value]=(statuses[value]||0)+1;});renderRanks("statusBreakdown",Object.entries(statuses),"No cases to show.");
     const issues={};cases.forEach(note=>{const value=labels[note.toolkit.issueType]||"General investigation";issues[value]=(issues[value]||0)+1;});renderRanks("issueBreakdown",Object.entries(issues),"No cases to show.");
     const attention=[...overdue,...active.filter(note=>!note.toolkit.owner && !CaseToolkitCore.overdue(note,now))];const list=$("attentionList");list.replaceChildren();

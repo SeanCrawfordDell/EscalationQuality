@@ -259,6 +259,15 @@ test('new case details autosave and are included in Lightning copy',async()=>{
   await h.click('copyNote');
   for(const [key,value] of Object.entries(details))assert.ok(h.ctx.copied.includes(`${C.fields[key]}:\n${value}`));
 });
+test('OS selection outside the case form autosaves and remains in copied notes',async()=>{
+  const h=harness();h.click('newNote');
+  h.get('os').value='Windows Server';
+  h.get('os').listeners.input({target:{id:'os',value:'Windows Server'}});
+  h.intervals.find(i=>i.ms===10000).f();
+  assert.equal(C.parse(h.stored()).cases[0].os,'Windows Server');
+  await h.click('copyNote');
+  assert.match(h.ctx.copied,/OS\/Solution:\nWindows Server/);
+});
 test('Copy to AI creates a bounded prompt without stopping time tracking',async()=>{
   const h=harness();h.click('newNote');h.edit('issue','Unexpected service restart');h.get('devinTask').value='troubleshoot';
   await h.click('copyDevin');

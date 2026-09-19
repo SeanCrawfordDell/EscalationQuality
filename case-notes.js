@@ -5,6 +5,7 @@
   const escapeHtml = value => String(value).replace(/[&<>"']/g,char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
   let state = CaseNotes.empty(), dirty = false, writable = false, copying = false, release;
   let savedState = null;
+  let notesPopout;
   let backupBusy = false, lastBackupSignature = "", lastBackupAt = null;
   try { lastBackupAt = localStorage.getItem("dell-support.last-backup-at"); } catch {}
   // Keep the case actions available at the top of the workspace while scrolling.
@@ -485,6 +486,7 @@
     $("stopTimer").disabled = !writable || copying || !selected() || selected().started === null;
     window.CaseMarkdown?.setEditable(writable && !copying);
     window.CaseToolkit?.setEditable(writable && !copying);
+    notesPopout?.refresh();
   }
   function tick() {
     const note = selected(); if (!note) return;
@@ -924,7 +926,7 @@
     });
   }
   
-  $("noteForm").addEventListener("input", event => {
+  function onCaseFieldInput(event) {
     if (!writable || copying) return;
     const effectiveFields = CaseNotes.getEffectiveFields(state);
     const fieldIds = effectiveFields.map(f => f.id);
@@ -938,7 +940,10 @@
     if (restarting) save();
     tick(); history();
     if (event.target.id === "os") window.CaseToolkit?.refreshChecklist();
-  });
+  }
+  $("noteForm").addEventListener("input", onCaseFieldInput);
+  // OS/Solution lives in Triage, outside the main case-details form.
+  $("os").addEventListener("input", onCaseFieldInput);
   $("emailNote").addEventListener("click", () => {
     const note = selected();
     if (!note || !writable || copying) return;
@@ -1186,6 +1191,14 @@
       await navigator.locks.request("dell-support.case-notes.editor", async () => {
         load();
         if (loadFailed) return;
+        if(notesPopout?.caseId) {
+          if(!state.cases.some(note=>note.id===notesPopout.caseId)) {
+            state.selected=null;notesPopout.unavailable();render();
+            $("lockNotice").textContent="The requested case is unavailable. Return to the full workspace to choose a case.";
+            return;
+          }
+          state.selected=notesPopout.caseId;
+        }
         writable = true; $("lockNotice").hidden = true; render();
         await new Promise(resolve => { release = resolve; });
       });
@@ -1231,6 +1244,15 @@
       $("next").value=note.next;$("next").dispatchEvent(new Event("input",{bubbles:true}));
       window.CaseMarkdown?.refresh();return save();
     }
+  });
+  notesPopout=window.CaseNotesPopout?.init({
+    current:selected,
+    canEdit:()=>writable && !copying,
+    save,
+    suspend(){
+      writable=false;release?.();release=null;controls();
+    },
+    resume:acquire
   });
   acquire();
 })();

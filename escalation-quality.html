@@ -13,14 +13,16 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231769e0'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-size='24' font-weight='700' fill='white'%3EER%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme.css">
-  <script src="case-toolkit-core.js" defer></script>
+  <script src="case-workflow-core.js?v=20260919-support-workflow" defer></script>
+  <script src="case-toolkit-core.js?v=20260919-support-workflow" defer></script>
   <script src="devin-prompt-core.js" defer></script>
-  <link rel="stylesheet" href="log-helper.css">
-<script src="log-helper-core.js" defer></script>
-<script src="log-helper.js" defer></script>
-<script src="app.js" defer></script>
-  <link rel="stylesheet" href="escalation-demo.css">
-  <script src="escalation-demo.js" defer></script>
+  <link rel="stylesheet" href="log-helper.css?v=20260919-support-workflow">
+<script src="log-helper-core.js?v=20260919-support-workflow" defer></script>
+<script src="log-helper.js?v=20260919-support-workflow" defer></script>
+<script src="app.js?v=20260919-support-workflow" defer></script>
+  <link rel="stylesheet" href="escalation-demo.css?v=20260919-support-workflow">
+  <script src="guided-tour.js?v=20260919-support-workflow" defer></script>
+  <script src="escalation-demo.js?v=20260919-support-workflow" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -49,6 +51,11 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
     <div class="workspace">
       <form id="escalationForm" novalidate>
 <p id="draftStatus" role="status">No saved draft</p>
+        <section class="panel" aria-labelledby="caseTitleHeading">
+          <h2 id="caseTitleHeading">Case Title</h2>
+          <label class="field">Server Type / System Platform | OS | Issue Description<textarea id="caseTitle" readonly rows="2" placeholder="Generated from the platform, OS, and problem statement."></textarea></label>
+          <p class="toolkit-help">Updates automatically when the source fields change. Included at the top of the copied escalation.</p>
+        </section>
         <section class="panel" id="sourceNotePanel" hidden>
           <h2>Imported from Case Notes</h2>
           <p>Review the populated fields and complete the remaining escalation details below.</p>
@@ -131,10 +138,11 @@ Applicable rules used: CG-INPUT-001.2, CG-INPUT-001.1, CG-INPUT-001.3, CG-INPUT-
   </dialog>
 <dialog id="logHelperDialog" class="log-helper-dialog" aria-labelledby="logHelperTitle">
 <div class="log-helper-heading"><h2 id="logHelperTitle">Which logs should I collect?</h2><button class="button secondary" id="closeLogHelper" type="button">Close</button></div>
-<p>Choose the scenario to build a collection plan. Changing these choices does not change your case fields.</p>
+<p id="helperContext"></p>
+<p>Recommendations only — nothing runs automatically. Review permissions, production impact, and approved storage before collection. Logs and dumps can contain sensitive customer data. Defer host commands if Windows is unavailable.</p>
 <div class="field-grid">
 <label class="field">OS/Solution<select id="helperOS"></select></label>
-<label class="field">What is happening?<select id="helperSymptom"><option value="general">Other / general issue</option><option value="boot">Boot failure</option><option value="crash">Crash / unexpected restart</option><option value="performance">Performance / slow response</option><option value="network">Network connectivity</option><option value="storage">Storage / disk errors</option></select></label>
+<label class="field">Issue type for this plan<select id="helperSymptom" aria-describedby="helperContext"></select></label>
 </div><div id="helperResults"></div>
 <details id="helperPlain"><summary>Plain text plan</summary><textarea id="helperPlanText" aria-label="Log collection plan" readonly></textarea></details>
 <div class="log-helper-actions"><button id="helperCopy" class="button secondary" type="button">Copy plan</button><button id="helperAdd" class="button primary" type="button">Add plan</button></div><p id="helperStatus" role="status"></p>

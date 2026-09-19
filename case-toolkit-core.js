@@ -1,11 +1,19 @@
 "use strict";
 const CaseToolkitCore = (() => {
+  const Workflow = typeof module!=="undefined" ? require("./case-workflow-core.js") : (typeof CaseWorkflowCore!=="undefined" ? CaseWorkflowCore : null);
+  // Workflow additions share this case's persistence and export path.
   const templates = {
     general: { name:"General investigation", prompts:["Observed behavior", "Business impact and affected users", "Expected behavior", "First occurrence and frequency", "Recent changes", "Troubleshooting actions and results", "Evidence collected"] },
-    boot: { name:"Boot failure", prompts:["Last successful boot", "Failure stage and exact on-screen message", "Recent firmware, OS, or hardware changes", "Boot device and storage visibility", "Recovery actions attempted and results", "Available console screenshots and logs"] },
+    boot: { name:"Boot / startup failure", prompts:["Last successful boot", "Failure stage and exact on-screen message", "Recent firmware, OS, or hardware changes", "Boot device and storage visibility", "Recovery actions attempted and results", "Available console screenshots and logs"] },
     crash: { name:"Crash / unexpected restart", prompts:["Crash time and time zone", "Stop code, panic, or error text", "Workload active at failure", "Frequency and affected systems", "Recent changes", "Crash dump and event log location", "Actions attempted and results"] },
-    network: { name:"Network connectivity", prompts:["Source and destination", "Affected interface, VLAN, and route", "Scope: one host or multiple systems", "Expected versus observed connectivity", "DNS and name resolution observations", "Recent network changes", "Tests performed and results"] },
-    performance: { name:"Performance degradation", prompts:["Affected workload and business impact", "Normal baseline versus current behavior", "Start time and duration", "CPU, memory, storage, and network observations", "Recent changes", "Measurements and comparison results"] }
+    network: { name:"Network / DNS connectivity", prompts:["Source and destination", "Affected interface, VLAN, and route", "Scope: one host or multiple systems", "Expected versus observed connectivity", "DNS and name resolution observations", "Recent network changes", "Tests performed and results"] },
+    performance: { name:"Performance / system hangs", prompts:["Affected workload and business impact", "Normal baseline versus current behavior", "Start time and duration", "CPU, memory, storage, and network observations", "Recent changes", "Measurements and comparison results"] },
+    storage: { name:"Storage / disk / filesystem", prompts:["Affected disks, volumes, and paths", "Exact error and incident time", "Capacity and latency observations", "Controller and firmware versions", "Recent storage changes", "Storage events and diagnostic location"] },
+    directory: { name:"Active Directory / authentication / Group Policy", prompts:["Affected users, computers, and domain controllers", "Authentication error or policy symptom", "Incident time and scope", "DNS and replication observations", "Recent domain or policy changes", "Diagnostics and event log location"] },
+    hyperv: { name:"Hyper-V / virtual machines", prompts:["Affected VM and Hyper-V host", "VM state and exact error", "Host versus guest symptoms", "Incident time and workload", "Recent VM, host, or switch changes", "Hyper-V events and configuration evidence"] },
+    cluster: { name:"Failover clustering", prompts:["Cluster and affected nodes", "Failed role or resource", "Failover time and time zone", "Quorum and node-state observations", "Recent cluster or storage changes", "Cluster logs and System event location"] },
+    updates: { name:"Windows Update / installation failures", prompts:["Failed KB, role, or installation", "OS build and exact error code", "Failure time and installation stage", "Update source and reboot state", "Recent servicing changes", "Windows Update, CBS, DISM, or setup log location"] },
+    smb: { name:"File shares / SMB / permissions", prompts:["Affected client, server, and share", "Exact access error and incident time", "User scope and expected permissions", "Read versus write behavior", "Recent share or security changes", "SMB logs and permission evidence"] }
   };
   const statuses = ["Open", "In progress", "Waiting on customer", "Completed"];
   const templateStorageKey = "dell-support.case-templates.v1";
@@ -34,6 +42,7 @@ const CaseToolkitCore = (() => {
   function validate(note) {
     const data = ensure(note);
     if (!data || typeof data !== "object" || !validTemplateId(data.issueType) || !statuses.includes(data.status) || !["impact","questions","owner","due","customerDraft","summaryDraft","timelineAction","timelineResult"].every(k=>typeof data[k]==="string") || (data.due && !Number.isFinite(Date.parse(data.due))) || !data.checks || typeof data.checks!=="object" || Array.isArray(data.checks) || !Object.values(data.checks).every(v=>typeof v==="boolean") || !Array.isArray(data.timeline) || !data.timeline.every(e=>e && typeof e.id==="string" && Number.isFinite(e.at) && e.at>=0 && typeof e.action==="string" && typeof e.result==="string")) throw Error("Invalid case toolkit data");
+    Workflow?.validate(note);
     return data;
   }
   const overdue = (note, now) => !!note.toolkit?.due && note.toolkit.status !== "Completed" && Date.parse(note.toolkit.due) < now;
@@ -78,6 +87,7 @@ const CaseToolkitCore = (() => {
     if(data.owner || data.due || data.status!=="Open")sections.push(`Follow-up:\nStatus: ${data.status}\nOwner: ${data.owner || "Not assigned"}\nDue: ${data.due || "Not scheduled"}`);
     const checked=checklist(note).filter(item=>data.checks[item.id]);
     if(checked.length)sections.push("Evidence checklist completed:\n"+checked.map(item=>"- "+item.text).join("\n"));
+    const workflow=Workflow?.text(note);if(workflow)sections.push("Case workflow:\n"+workflow);
     return sections.join("\n\n");
   }
   function customerUpdate(note, plain, tone="clear") {

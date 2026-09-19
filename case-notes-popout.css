@@ -1,0 +1,25 @@
+.notes-heading { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; margin-bottom:12px; }
+.notes-heading .section-toggle { width:auto; padding:0; }
+.notes-heading .button { margin:0; padding:7px 12px; font-size:12px; }
+#compactNotesHeader { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 76px 12px 16px; border-bottom:1px solid var(--line); background:var(--panel-bg); }
+#compactCaseTitle { margin:0; font-size:17px; overflow-wrap:anywhere; }
+#returnToCase { padding:7px 10px; font-size:12px; white-space:nowrap; }
+#notesWindowStatus:empty { display:none; }
+.notes-compact .topbar,.notes-compact .hero,.notes-compact #caseHistory,.notes-compact #toggleHistory,
+.notes-compact #workflow,.notes-compact #caseDetailsSection,.notes-compact #actionPlanSection,
+.notes-compact .workspace-title > :not(#saveStatus):not(#retrySave),.notes-compact .timer,
+.notes-compact #notesHelp { display:none!important; }
+.notes-compact main { max-width:none; padding:12px; }
+.notes-compact .notes-layout { display:block; }
+.notes-compact .editor { padding:12px; }
+.notes-compact .editor-heading { margin-bottom:10px; padding-bottom:8px; }
+.notes-compact #copyActions { position:static!important; display:block; padding:0; margin:0 0 8px; max-height:none; border:0; box-shadow:none; }
+.notes-compact #copyActions > :not(#copyStatus) { display:none!important; }
+.notes-compact #copyStatus { font-size:12px; margin:0; }
+.notes-compact #notesRich { min-height:240px; height:calc(100dvh - 300px); resize:vertical; }
+.notes-compact .rich-toolbar { flex-wrap:wrap; }
+.notes-compact .rich-toolbar .button { font-size:12px; padding:6px 8px; }
+.notes-compact #floatingToolbox { top:8px!important; right:12px!important; left:auto!important; bottom:auto!important; width:44px; height:44px; z-index:40; }
+.notes-compact #toolboxRadial { display:none; }
+.notes-compact #floatingToolbox.is-open #toolboxRadial { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; inset:auto 0 auto auto; top:52px; width:min(320px,calc(100vw - 32px)); max-height:65dvh; overflow:auto; padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--panel-bg); box-shadow:0 8px 24px #0005; }
+.notes-compact #floatingToolbox.is-open #toolboxRadial button { position:static; transform:none!important; width:auto; height:auto; min-height:44px; border-radius:7px; font-size:12px; }

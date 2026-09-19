@@ -37,7 +37,7 @@ test('10-second autosave restores all fields, checks and paired actions; storage
  h.setFail(false);h.run('saveDraft()');assert.equal(h.run('dirty'),false);
 });
 test('edits invalidate review; copy requires a fresh review and reports clipboard failure',async()=>{
- const h=harness();await h.click('loadStrong');assert.equal(h.get('copyButton').disabled,false);await h.click('copyButton');assert.match(h.copied(),/^SERVICE REQUEST NUMBER:\n123456789/);
+ const h=harness();await h.click('loadStrong');assert.equal(h.get('copyButton').disabled,false);await h.click('copyButton');assert.match(h.copied(),/^CASE TITLE:\nPowerEdge R750 \| Windows Server \|/);assert.match(h.copied(),/SERVICE REQUEST NUMBER:\n123456789/);
  h.get('problem').value='Changed';h.run('markChanged()');assert.equal(h.get('copyButton').disabled,true);assert.match(h.get('resultTitle').textContent,/review again/);
  await h.click('copyButton');assert.match(h.get('copyStatus').textContent,/Review/);
  const f=harness({failClipboard:true});await f.click('loadStrong');await f.click('copyButton');assert.match(f.get('copyStatus').textContent,/Copy failed/);assert.equal(f.get('copyPreview').selected,true);
@@ -45,6 +45,20 @@ test('edits invalidate review; copy requires a fresh review and reports clipboar
 test('Copy to AI includes current escalation facts and its selected task',async()=>{
  const h=harness();await h.click('loadStrong');h.get('devinTask').value='logs';await h.click('copyDevin');
  assert.match(h.copied(),/Task: Recommend logs to collect/);assert.match(h.copied(),/SERVICE REQUEST NUMBER:\n123456789/);assert.match(h.get('devinStatus').textContent,/Copied for AI/);
+});
+test('DE case title is composed from imported platform OS and issue and survives draft restore',()=>{
+ const note=core.create(core.empty(),'title',100);
+ Object.assign(note,{platform:'PowerEdge R750',os:'Windows Server',issue:'Hyper-V\nVMs are slow'});
+ const h=harness({imported:core.escalation(note,100)});
+ const expected='PowerEdge R750 | Windows Server | Hyper-V VMs are slow';
+ assert.equal(h.get('caseTitle').value,expected);
+ assert.equal(harness({stored:h.stored()}).get('caseTitle').value,expected);
+ assert.ok(h.run('formatEscalation(data())').startsWith('CASE TITLE:\n'+expected));
+ h.get('os').value='Azure Local';h.run('markChanged()');assert.equal(h.get('caseTitle').value,'PowerEdge R750 | Azure Local | Hyper-V VMs are slow');
+});
+test('case title omits missing parts and clears with the escalation form',()=>{
+ const h=harness();h.run('populate({problem:" Boot failure "})');assert.equal(h.get('caseTitle').value,'Boot failure');
+ h.run('populate({})');assert.equal(h.get('caseTitle').value,'');assert.equal(h.run('formatEscalation(data())'),'');
 });
 test('samples and clear protect typed drafts even before first review',async()=>{
  const h=harness();h.get('problem').value='Original work';h.setConfirm(false);await h.click('loadStrong');await h.click('clearForm');assert.equal(h.get('problem').value,'Original work');
@@ -59,6 +73,14 @@ test('Notes handoff imports structured metadata and replaces old paired rows bef
  assert.equal(h.get('serviceRequest').value,'SR-555');assert.equal(h.get('platform').value,'R750');assert.equal(h.get('impact').value,'Production degraded');assert.equal(h.run('checks.incident'),true);
  const saved=JSON.parse(h.stored());saved.actions=[{action:'Old',result:'Old'}];
  const replaced=harness({stored:JSON.stringify(saved),imported:incoming});assert.equal(JSON.parse(replaced.stored()).actions.length,0);
+});
+test('Windows collection categories survive DE import and draft restore',()=>{
+ for(const issueType of ['storage','directory','hyperv','cluster','updates','smb']){
+  const note=core.create(core.empty(),'category',100);note.toolkit.issueType=issueType;
+  const h=harness({imported:core.escalation(note,100)});
+  assert.equal(h.run('issueType'),issueType);
+  assert.equal(harness({stored:h.stored()}).run('issueType'),issueType);
+ }
 });
 
 test('another tab cannot silently overwrite a newer draft',()=>{

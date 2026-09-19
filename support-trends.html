@@ -10,9 +10,10 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="support-trends.css">
-  <script src="case-toolkit-core.js" defer></script>
+  <script src="case-workflow-core.js?v=20260919-support-workflow" defer></script>
+  <script src="case-toolkit-core.js?v=20260919-support-workflow" defer></script>
   <script src="case-notes-core.js" defer></script>
-  <script src="support-trends.js" defer></script>
+  <script src="support-trends.js?v=20260919-support-workflow" defer></script>
 </head>
 <body>
   <header class="topbar"><a class="brand home-link" href="index.html"><span class="brand-mark">←</span>Support Assistant</a><div class="theme-controls" role="group" aria-label="Appearance"><button id="themeToggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark</span></button></div></header>
@@ -21,6 +22,7 @@
     <p class="notice">This dashboard reads only the Case Notes history saved in this browser. It does not upload or share case data.</p>
     <section id="emptyState" class="panel empty-state" hidden><h2>No case history yet</h2><p>Create and save cases in Case Notes to see local trends here.</p><a class="button primary" href="case-notes.html">Create a case</a></section>
     <section id="dashboard" hidden>
+      <section class="panel"><h2>Resolution and repeat prevention</h2><p>Signals from recent cases saved in this browser; matching configurations are investigation candidates, not confirmed common causes.</p><div id="preventionSummary"></div><div id="preventionGroups"></div></section>
       <div class="metric-grid" aria-label="Case metrics"><article class="metric"><span>Total cases</span><strong id="totalCases">0</strong></article><article class="metric"><span>Active cases</span><strong id="activeCases">0</strong></article><article class="metric"><span>Overdue follow-ups</span><strong id="overdueCases">0</strong></article></div>
       <div class="trend-grid"><section class="panel"><h2>Cases by status</h2><p class="panel-intro">Current work distribution.</p><div id="statusBreakdown" class="rank-list"></div></section><section class="panel"><h2>Issues by type</h2><p class="panel-intro">Patterns in recent case records.</p><div id="issueBreakdown" class="rank-list"></div></section><section class="panel"><h2>Next attention</h2><p class="panel-intro">Overdue and unassigned active cases.</p><div id="attentionList" class="attention-list"></div></section></div>
     </section>

@@ -14,3 +14,18 @@
 #featureDemo button:focus-visible { outline:3px solid var(--blue); outline-offset:3px; }
 #demoBack:disabled { opacity:.45; cursor:default; }
 @media(max-width:500px) { #featureDemo { padding:20px; } .demo-top { align-items:flex-start; } #demoTitle { font-size:23px; } }
+.tour-running { padding-bottom:400px; }
+.tour-target { scroll-margin-top:20px; }
+.tour-running #copyActions { position:static!important; }
+.tour-running .results-shell { position:static!important; }
+.tour-running #floatingToolbox { visibility:hidden; }
+.tour-shield { position:fixed; inset:0; z-index:10000; }
+.tour-spotlight { position:fixed; z-index:10001; border:3px solid #60a5fa; border-radius:12px; box-shadow:0 0 0 9999px rgb(5 16 30 / 65%); pointer-events:none; }
+#featureDemo.guided-tour { position:fixed; inset:auto 16px 16px auto; margin:0; width:min(400px,calc(100vw - 32px)); max-height:60dvh; padding:20px; z-index:10002; }
+#featureDemo.guided-tour .demo-progress { margin:12px 0 8px; }
+#featureDemo.guided-tour #demoTitle { font-size:21px; margin-bottom:8px; }
+#featureDemo.guided-tour #demoDescription { font-size:13px; line-height:1.45; margin-bottom:10px; }
+#featureDemo.guided-tour .demo-example { margin:10px 0; padding:12px; }
+#featureDemo.guided-tour #demoExample { font-size:13px; line-height:1.45; margin-top:6px; }
+#featureDemo.guided-tour .demo-footer { position:sticky; bottom:-20px; background:var(--panel-bg); padding:12px 0; }
+@media(prefers-reduced-motion:reduce) { .tour-running * { scroll-behavior:auto!important; } }

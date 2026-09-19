@@ -25,6 +25,12 @@ const samples = {
 Object.assign(samples.strong, {serviceRequest:"123456789", platform:"PowerEdge R750", tag:"ABC1234", supportType:"OEM", osVersion:"Windows Server 2022; iDRAC 7.10.30.00", severity:"Sev 3", production:"Production operational", affected:"1 of 24 hosts; infrastructure team", logLocation:"Case attachments: Lifecycle Controller log and browser trace"});
 
 function value(id) { return document.getElementById(id).value.trim(); }
+function caseTitle(form) {
+  return [form.platform, form.os, form.problem].map(text => String(text || "").replace(/\s+/g," ").trim()).filter(Boolean).join(" | ");
+}
+function refreshCaseTitle() {
+  byId("caseTitle").value = caseTitle({platform:value("platform"),os:value("os"),problem:value("problem")});
+}
 function addFinding(target, field, reason, kind) { target.push({ field, reason, kind }); }
 function hasDetail(text = "", minimum) { return text.trim().length >= minimum && !weakPhrases.test(text.trim()); }
 function numberedSteps(text) { return (text.match(/(?:^|\n)\s*(?:\d+[.)]|[-•])/g) || []).length; }
@@ -165,9 +171,12 @@ function reviewData() {
 function formatEscalation(form) {
   const order = ["serviceRequest", "tag", "platform", "os", "osVersion", "supportType", "country", "severity", "production", "affected", "problem", "impact", "timeline", "expected", "errors", "reproduction", "troubleshooting", "results", "evidence", "logLocation", "logReason", "collectionPlan", "changes", "sourceNote"];
   const sections = order.filter(id => form[id] && (id !== "logReason" || form.evidence === "No")).map(id => `${labels[id].toUpperCase()}:\n${form[id]}`);
+  const title=caseTitle(form);
+  if(title)sections.unshift("CASE TITLE:\n"+title);
   return sections.join("\n\n");
 }
 function markChanged() {
+  refreshCaseTitle();
   dirty = true; formHasData = true; lastReviewed = "";
   byId("draftStatus").textContent = "Unsaved changes";
   byId("copyButton").disabled = true;
@@ -216,6 +225,7 @@ function populate(fields) {
     input.value = text;
   });
   byId("sourceNotePanel").hidden = !value("sourceNote");
+  refreshCaseTitle();
   updateLogReasonVisibility();
   byId("collectionPlanPanel").hidden = !value("collectionPlan");
 }

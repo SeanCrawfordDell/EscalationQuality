@@ -5,6 +5,9 @@
 .note-section:last-child { margin-bottom:0; }
 .section-toggle { display:flex; align-items:center; gap:9px; width:100%; text-align:left; background:none; border:none; padding:0 0 12px; margin:0; font:inherit; font-size:15px; font-weight:800; color:var(--ink); cursor:pointer; }
 .section-toggle:hover { color:var(--blue); }
+.action-plan-heading { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-bottom:12px; }
+.action-plan-heading .section-toggle { width:auto; padding:0; }
+.action-plan-heading .button { margin:0; padding:7px 12px; font-size:12px; white-space:nowrap; }
 .section-arrow { display:inline-block; flex:none; transition:transform .15s ease; color:var(--blue); font-size:24px; }
 .note-section.collapsed .section-arrow { transform:rotate(-90deg); }
 .note-section.collapsed .section-content { display:none; }
@@ -21,7 +24,6 @@
 .backup-location p { flex-basis:100%; }
 .history>.field { margin-bottom:12px; }
 .case-utilities { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:16px; }
-.case-workspace-toolbar { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 16px; margin-bottom:12px; }
 .case-issue-picker { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; flex:1 1 540px; max-width:640px; min-width:0; }
 .case-issue-picker .field { flex:1 1 200px; min-width:0; max-width:340px; margin:0; gap:4px; }
 .case-issue-picker #manageTemplates { flex:none; margin:0; }
@@ -29,7 +31,6 @@
 .case-issue-picker #applyTemplate { flex:none; margin:0; }
 .case-issue-picker #templateStatus { flex-basis:100%; margin:0; font-size:12px; }
 .case-issue-picker #templateStatus:empty { display:none; }
-.case-workspace-toolbar .case-utilities { margin:0 0 0 auto; justify-content:flex-end; }
 .case-row-actions { display:flex; flex-wrap:wrap; gap:6px; grid-column:1 / -1; padding-bottom:8px; }
 .case-row-actions button { font-size:12px; padding:6px 10px; min-height:32px; }
 .version-preview { max-height:40vh; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; padding:12px; border:1px solid var(--line); }
@@ -190,7 +191,7 @@ fieldset { border:0; padding:0; margin:0; min-width:0; }
 
 .workspace-title { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0; }
 .workspace-title .eyebrow { margin:0!important; flex-shrink:0; }
-.workspace-title [data-toolkit="followup"] { margin:0; padding:7px 12px; font-size:12px; white-space:nowrap; }
+.workspace-title :is([data-toolkit="followup"], #caseVersions, #printCase) { margin:0; padding:7px 12px; font-size:12px; white-space:nowrap; }
 @media(max-width:500px) { .workspace-title { flex-wrap:wrap; gap:6px; } }
 
 /* A restrained shared treatment keeps action colors distinct without solid neon fills. */

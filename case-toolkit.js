@@ -36,6 +36,7 @@ window.CaseToolkit = (() => {
     }));
   }
   function refresh() {
+    window.CaseWorkflow?.refresh();
     const note=api?.current();if(!note)return;
     const data=core.ensure(note);
     for(const [id,key] of Object.entries(bindings))$(id).value=data[key];
@@ -51,6 +52,7 @@ window.CaseToolkit = (() => {
   }
   function init(options) {
     api=options;
+    window.CaseWorkflow?.init(options);
     window.addEventListener?.("caseTemplatesChanged",refreshTemplates);
     window.addEventListener?.("supportSettingsRestored",refreshTemplates);
     window.addEventListener?.("storage",event=>{if(event.key===core.templateStorageKey || event.key===null)refreshTemplates();});
@@ -105,7 +107,7 @@ window.CaseToolkit = (() => {
     $("copyCustomer").addEventListener("click",()=>copyDraft("customerDraft"));
     $("copySummary").addEventListener("click",()=>copyDraft("summaryDraft"));
   }
-  return {init,refresh,refreshChecklist,refreshTemplates,canEdit:()=>!!api?.canEdit(),setEditable(value){$("toolkitFields").disabled=!value;
+  return {init,refresh,refreshChecklist,refreshTemplates,canEdit:()=>!!api?.canEdit(),setEditable(value){window.CaseWorkflow?.setEditable(value);$("toolkitFields").disabled=!value;
     $("caseIssueType").disabled=!value || !api?.current();
     $("manageTemplates").disabled=!value;
     refreshTemplates();
