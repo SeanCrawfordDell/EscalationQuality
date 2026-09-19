@@ -14,7 +14,8 @@ const CaseSettings = (() => {
     const reserved = new Set(["__proto__", "constructor", "prototype", "id", "created", "updated", "started", "elapsed", "lastSession", "images", "toolkit", "pinned", "deletedAt"]);
     const customFields = {};
     for (const [id, label] of Object.entries(config.fieldConfig.customFields)) {
-      if (!/^[a-zA-Z0-9_-]+$/.test(id) || reserved.has(id) || Object.hasOwn(fields, id) || typeof label !== "string" || !label.trim() || label.length > 120) bad();
+      // Older versions allowed long labels; keep those backups restorable.
+      if (!/^[a-zA-Z0-9_-]+$/.test(id) || reserved.has(id) || Object.hasOwn(fields, id) || typeof label !== "string" || !label.trim()) bad();
       customFields[id] = label;
     }
     const allowed = [...Object.keys(fields), ...Object.keys(customFields)];

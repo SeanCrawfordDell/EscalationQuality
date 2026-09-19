@@ -30,6 +30,10 @@ Settings include field configuration, toolbox URLs/order/colors, custom AI promp
 
 **Restore History** replaces the complete current history with a history backup after confirmation, including Archive, Trash, and versions. Export current history first if you need to retain it. Settings are restored separately. Previously created individual-case JSON exports remain importable, replacing only a matching case ID after confirmation.
 
+## Custom fields
+
+New field labels support up to 120 characters. Older backups with longer labels remain restorable. Removing a field or resetting custom fields removes its values from recent cases, Archive, Trash, and saved versions after confirmation. Previously exported backup files are not changed. Both plain-text and HTML email exports include custom fields.
+
 ## Personal troubleshooting templates
 
 Use **Manage templates** beside the issue dropdown to create a template or edit an existing one. Set a name, note text/prompts, and optional next steps. These fields accept plain text and line breaks, not HTML. **Save template** makes it available in the dropdown immediately and after reopening the browser.

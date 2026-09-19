@@ -586,7 +586,7 @@
     $("caseRecoveryTitle").textContent = "Version History";
     $("caseVersionPreview").textContent = "Choose Preview to inspect a version before restoring.";
     $("caseRecoveryStatus").textContent = "";
-    const versions = state.revisions?.[id] || [];
+    const versions = Object.hasOwn(state.revisions || {},id) ? state.revisions[id] : [];
     $("caseVersionList").replaceChildren(...versions.map(version => {
       const row = document.createElement("div"); row.className = "case-utilities";
       const label = document.createElement("span"); label.textContent = new Date(version.savedAt).toLocaleString(); row.append(label);
@@ -598,7 +598,7 @@
         const ok = commitCaseChange(candidate => {
           const current = candidate.cases.find(note => note.id === id); if (!current) throw Error("Case changed");
           const snapshot = JSON.parse(JSON.stringify(current)); CaseNotes.stop(snapshot,Date.now());
-          candidate.revisions[id] = [{savedAt:Date.now(),note:snapshot},...(candidate.revisions[id] || [])].slice(0,10);
+          candidate.revisions[id] = [{savedAt:Date.now(),note:snapshot},...(Object.hasOwn(candidate.revisions,id) ? candidate.revisions[id] : [])].slice(0,10);
           const restored = JSON.parse(JSON.stringify(version.note)); restored.started = null; restored.updated = Date.now(); restored.pinned = current.pinned;
           candidate.cases[candidate.cases.findIndex(note => note.id === id)] = restored;
         });
@@ -827,7 +827,7 @@
         <button class="remove-field" type="button" data-field-id="${id}">Remove</button>
       `;
       item.querySelector(".remove-field").addEventListener("click", () => {
-        if (confirm(`Remove custom field "${label}"? This will remove the field from all existing cases.`)) {
+        if (confirm(`Remove custom field "${label}"? This removes its values from recent cases, Archive, Trash, and saved versions. Existing backup files are not changed.`)) {
           try {
             CaseNotes.removeCustomField(state, id);
             dirty = true;
@@ -892,19 +892,10 @@
   });
   
   $("resetFields").addEventListener("click", () => {
-    if (confirm("Reset all fields to default order and remove custom fields? This cannot be undone.")) {
-      state.fieldConfig = { order: [...CaseNotes.defaultFieldOrder], customFields: {} };
-      // Remove custom fields from all cases
-      state.cases.forEach(note => {
-        Object.keys(CaseNotes.fields).forEach(key => {
-          if (!Object.hasOwn(note, key)) note[key] = "";
-        });
-        Object.keys(state.fieldConfig.customFields).forEach(key => {
-          delete note[key];
-        });
-      });
+    if (confirm("Reset field order and remove custom fields and their values from recent cases, Archive, Trash, and saved versions? This cannot be undone. Existing backup files are not changed.")) {
+      CaseNotes.resetCustomFields(state);
       dirty = true;
-      save();
+      if (!save()) return;
       $("fieldCustomizer").close();
       render();
       $("copyStatus").textContent = "Fields reset to default.";
@@ -923,17 +914,12 @@
     if (!note) return;
     const effectiveFields = CaseNotes.getEffectiveFields(state);
     effectiveFields.forEach(({ id }) => {
+      // Rich editor input already updates the canonical, sanitized note with
+      // attachment references. Never persist rendered image data URLs here.
+      if (id === "notes" || id === "next") return;
       const element = $(id);
       if (element) {
-        if (id === "notes") {
-          const richEditor = $("notesRich");
-          if (richEditor) note[id] = richEditor.innerHTML;
-        } else if (id === "next") {
-          const richEditor = $("nextRich");
-          if (richEditor) note[id] = richEditor.innerHTML;
-        } else {
-          note[id] = element.value;
-        }
+        note[id] = element.value;
       }
     });
   }
@@ -966,7 +952,7 @@
     try {
       const now = Date.now();
       const content = window.CaseMarkdown.emailHtml(note, now, state.fieldConfig);
-      const message = CaseNotes.emailFile(note, now, content, crypto.randomUUID());
+      const message = CaseNotes.emailFile(note, now, content, crypto.randomUUID(), state.fieldConfig);
       const url = URL.createObjectURL(new Blob([message], { type: "message/rfc822" }));
       const link = document.createElement("a"); link.href = url;
       link.download = "case-" + note.request.replace(/[^a-zA-Z0-9-]/g, "_").slice(0, 80) + ".eml";

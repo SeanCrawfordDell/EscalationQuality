@@ -323,6 +323,23 @@ test('backup freezes elapsed time without changing live history and restores all
   assert.equal(C.elapsed(restored.cases[0],9999999),10000);
   assert.equal(restored.selected,'backup');
 });
+test('imported inherited-property IDs can open empty version history',async()=>{
+  const h=harness(),s=C.empty();C.create(s,'toString',1);
+  h.get('restoreFile').files=[{text:async()=>C.backup(s,2)}];await h.get('restoreFile').listeners.change();
+  h.click('caseVersions');assert.match(h.get('caseRecoveryStatus').textContent,/No earlier versions/);
+});
+test('copy actions preserve canonical screenshot references instead of rendered image payloads',async()=>{
+  const h=harness();const s=C.empty();const n=C.create(s,'image-case',1);
+  n.notes='<p>QA screenshot</p><img src="attachment:qa-image" alt="QA">';
+  n.images={'qa-image':{name:'QA',data:'data:image/png;base64,AAAA'}};
+  h.get('restoreFile').files=[{text:async()=>C.backup(s,2)}];await h.get('restoreFile').listeners.change();
+  h.get('notesRich').innerHTML='<p>QA screenshot</p><img src="data:image/png;base64,AAAA" alt="QA">';
+  await h.click('copyNote');
+  assert.equal(C.parse(h.stored()).cases[0].notes,n.notes);
+  await h.click('copyDevin');
+  assert.match(h.ctx.copied,/QA screenshot/);
+  assert.equal(C.parse(h.stored()).cases[0].notes,n.notes);
+});
 test('restore replaces history only after valid input, confirmation, and successful storage', async () => {
   const h=harness();h.click('newNote');h.edit('notes','Keep me');
   const original=h.stored();

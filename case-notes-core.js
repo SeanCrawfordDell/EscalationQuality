@@ -54,7 +54,7 @@ const CaseNotes = (() => {
     const orderedFields = config.order.filter(key => allFields[key]).concat(Object.keys(config.customFields).filter(key => !config.order.includes(key)));
     return [...orderedFields.map(key => `${allFields[key] || key}:\n${plainImages(note[key] || "")}`), ...(extra ? [extra] : []), `Time Spent:\n${duration(elapsed(note, now))}`].join("\n\n");
   }
-  function emailFile(note, now, content, token) {
+  function emailFile(note, now, content, token, fieldConfig = null) {
     if (!/^[a-zA-Z0-9-]+$/.test(token)) throw Error("Invalid email ID");
     const base64 = text => btoa(Array.from(new TextEncoder().encode(text), byte => String.fromCharCode(byte)).join(""));
     const wrap = text => (text.match(/.{1,76}/g) || []).join("\r\n");
@@ -65,7 +65,7 @@ const CaseNotes = (() => {
     const lines = ["MIME-Version: 1.0", "X-Unsent: 1", "Date: " + new Date(now).toUTCString(), "Subject: " + subjectHeader,
       `Content-Type: multipart/related; boundary="${related}"`, "", `--${related}`,
       `Content-Type: multipart/alternative; boundary="${alternative}"`, "",
-      `--${alternative}`, "Content-Type: text/plain; charset=UTF-8", "Content-Transfer-Encoding: base64", "", wrap(base64(copyText(note, now))),
+      `--${alternative}`, "Content-Type: text/plain; charset=UTF-8", "Content-Transfer-Encoding: base64", "", wrap(base64(copyText(note, now, fieldConfig))),
       `--${alternative}`, "Content-Type: text/html; charset=UTF-8", "Content-Transfer-Encoding: base64", "", wrap(base64(content.html)), `--${alternative}--`];
     for (const [id, image] of Object.entries(content.images)) {
       const match = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/.exec(image.data);
@@ -111,8 +111,11 @@ const CaseNotes = (() => {
     for (const before of previous?.cases || []) {
       const after = current.get(before.id);
       if (!after || contentSignature(before) === contentSignature(after)) continue;
-      const versions = state.revisions[before.id] ||= [];
+      const versions = Object.hasOwn(state.revisions,before.id) ? state.revisions[before.id] : [];
       const snapshot = JSON.parse(JSON.stringify(before)); stop(snapshot, now);
+      for (const id of Object.keys(previous?.fieldConfig?.customFields || {})) {
+        if (!Object.hasOwn(state.fieldConfig.customFields,id)) delete snapshot[id];
+      }
       versions.unshift({ savedAt: now, note: snapshot });
       state.revisions[before.id] = versions.slice(0, 10);
     }
@@ -204,6 +207,7 @@ const CaseNotes = (() => {
     return state;
   }
   function addCustomField(state, fieldId, fieldLabel) {
+    if (typeof fieldLabel !== "string" || !fieldLabel.trim() || fieldLabel.length > 120) throw Error("Field labels must contain 1–120 characters.");
     if (!/^[a-zA-Z0-9_-]+$/.test(fieldId)) throw Error("Invalid field ID");
     if (["id","created","updated","started","elapsed","lastSession","images","toolkit","pinned","deletedAt","__proto__","constructor","prototype"].includes(fieldId)) throw Error("Reserved field ID");
     if (fields[fieldId] || state.fieldConfig.customFields[fieldId]) throw Error("Field already exists");
@@ -219,7 +223,15 @@ const CaseNotes = (() => {
     delete state.fieldConfig.customFields[fieldId];
     state.fieldConfig.order = state.fieldConfig.order.filter(id => id !== fieldId);
     // Remove field from all existing cases
-    state.cases.forEach(note => delete note[fieldId]);
+    for (const collection of [state.cases,state.archive || [],state.trash || []]) {
+      collection.forEach(note => delete note[fieldId]);
+    }
+    Object.values(state.revisions || {}).flat().forEach(version => delete version.note[fieldId]);
+    return state;
+  }
+  function resetCustomFields(state) {
+    Object.keys(state.fieldConfig.customFields).forEach(id => removeCustomField(state,id));
+    state.fieldConfig.order = [...defaultFieldOrder];
     return state;
   }
   function reorderFields(state, newOrder) {
@@ -234,6 +246,6 @@ const CaseNotes = (() => {
     const allFields = { ...fields, ...state.fieldConfig.customFields };
     return state.fieldConfig.order.filter(key => allFields[key]).map(key => ({ id: key, label: allFields[key] }));
   }
-  return { fields, defaultFieldOrder, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, reorderFields, getEffectiveFields, move, checkpoint, searchText, excerpt, trimWorkingList };
+  return { fields, defaultFieldOrder, empty, elapsed, lastSession, stop, start, create, duration, plainText: plainImages, copyText, emailFile, backup, escalation, parse, addCustomField, removeCustomField, resetCustomFields, reorderFields, getEffectiveFields, move, checkpoint, searchText, excerpt, trimWorkingList };
 })();
 if (typeof module !== "undefined") module.exports = CaseNotes;
